@@ -1,0 +1,14 @@
+*.csproj
+*.sln
+*.DotSettings
+*.suo
+*.userprefs
+*.DS_Store
+*.unityproj
+*.pidb
+/obj/
+/Library/
+/Release/
+/Temp/
+/Assets/UnityVS/
+/Assets/UnityVS.meta
