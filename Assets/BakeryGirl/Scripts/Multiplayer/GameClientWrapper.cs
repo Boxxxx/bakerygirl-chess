@@ -52,7 +52,7 @@ namespace BakeryGirl.Chess.Multiplayer {
         }
 
         void Update() {
-            Client.Update();
+            Client.OnUpdate();
         }
 
         void OnApplicationQuit() {

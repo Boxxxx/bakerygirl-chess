@@ -2,6 +2,7 @@
 using System;
 using System.Collections;
 using System.Collections.Generic;
+using BakeryGirl.Chess.Multiplayer;
 
 /// <summary>
 /// Drag Event to maintain drag action in controller
@@ -141,9 +142,9 @@ public class Controller : MonoBehaviour
 {
     #region Enums
     public enum MoveState { Idle, Pick, Occupy };
-    public enum MainState { Ready, Move, Wait, Over, AI_Thinking, AI_Running};
-    public enum PhaseState { Player, AI, Other};
-    public enum GameMode { Normal, AI, Stay};
+    public enum MainState { Ready, Move, Wait, Over, AgentThinking, AgentRunning };
+    public enum PhaseState { Player, Agent, Other};
+    public enum GameMode { Normal, AI, Multiplayer, Stay};
     public enum EffectType { Unknown, Move, CollectBread, Killout, MoveIn};
     #endregion
 
@@ -188,10 +189,16 @@ public class Controller : MonoBehaviour
         get {
             if (state == MainState.Move || state == MainState.Wait)
                 return PhaseState.Player;
-            else if (state == MainState.AI_Thinking || state == MainState.AI_Running)
-                return PhaseState.AI;
+            else if (state == MainState.AgentThinking || state == MainState.AgentRunning)
+                return PhaseState.Agent;
             else
                 return PhaseState.Other;
+        }
+    }
+
+    public GameClient Client {
+        get {
+            return GameClientWrapper.ClientInstance;
         }
     }
     #endregion
@@ -204,7 +211,7 @@ public class Controller : MonoBehaviour
     }
     public void NextTurn()
     {
-        if (state == MainState.Wait || state == MainState.AI_Running)
+        if (state == MainState.Wait || state == MainState.AgentRunning)
         {
             Ruler.GameResult result = Ruler.CheckGame(board);
             if (result == Ruler.GameResult.NotYet)
@@ -302,8 +309,12 @@ public class Controller : MonoBehaviour
         resultSprite.gameObject.SetActive(false);
         turnOverButton.gameObject.SetActive(false);
 
-        if (gameMode != GameMode.Normal)
+        if (gameMode == GameMode.AI) {
             InitAI();
+        }
+        else if (gameMode == GameMode.Multiplayer) {
+            InitMultiplayer();
+        }
         logger.Text = "";
         logger.State = UILogger.StateEnum.Normal;
     }
@@ -314,8 +325,12 @@ public class Controller : MonoBehaviour
     private void NewTurn()
     {
         storage.SwitchTurn(turn);
-        if (gameMode != GameMode.Normal)
+        if (gameMode == GameMode.AI) {
             BeginAILogic();
+        }
+        else if (gameMode == GameMode.Multiplayer) {
+            BeginMultiplayerLogic();
+        }
         turnOverButton.gameObject.SetActive(false);
     }
     private void OnGameOver()
@@ -446,7 +461,7 @@ public class Controller : MonoBehaviour
     {
         if(ai.MyTurn == turn)
         {
-            state = MainState.AI_Thinking;
+            state = MainState.AgentThinking;
             ai.Think(board);
             logger.Text = "思考中";
             logger.State = UILogger.StateEnum.Dot;
@@ -455,6 +470,32 @@ public class Controller : MonoBehaviour
     private bool DoAIAction()
     {
         AI_Action action = ai.GetAcition();
+        if (action.type == AI_Action.Type.Complete)
+            return true;
+        else if (action.type == AI_Action.Type.Move)
+            Move(board.GetUnit(action.move.src), board.GetUnit(action.move.tar), action.move.tar);
+        else
+            Buy(action.buy.type);
+        return false;
+    }
+    #endregion
+
+    #region Multiplayer Functions
+    private void InitMultiplayer() {
+    }
+
+    private void BeginMultiplayerLogic() {
+        if (Client.IsMyTurn) {
+            Client.EndTurn();
+        }
+        if (!Client.IsMyTurn) {
+            state = MainState.AgentThinking;
+            logger.Text = "等待对手行动";
+            logger.State = UILogger.StateEnum.Dot;
+        }
+    }
+    private bool DoRemoteAction() {
+        AI_Action action = Client.GetRemoteAction();
         if (action.type == AI_Action.Type.Complete)
             return true;
         else if (action.type == AI_Action.Type.Move)
@@ -488,20 +529,34 @@ public class Controller : MonoBehaviour
         if (state == MainState.Over || IsEffecting)
             return;
 
-        if (state == MainState.AI_Thinking)
+        if (state == MainState.AgentThinking)
         {
-            if (ai.State == AIPlayer.StateEnum.Complete)
-            {
-                logger.Text = string.Format("花费时间 : {0}ms", ai.CostTime);
-                logger.State = UILogger.StateEnum.Normal;
-                state = MainState.AI_Running;
+            if (gameMode == GameMode.AI) {
+                if (ai.State == AIPlayer.StateEnum.Complete) {
+                    logger.Text = string.Format("花费时间 : {0}ms", ai.CostTime);
+                    logger.State = UILogger.StateEnum.Normal;
+                    state = MainState.AgentRunning;
+                }
+            }
+            else if (gameMode == GameMode.Multiplayer) {
+                if (Client.IsReceivedRemoteAction) {
+                    logger.Text = string.Format("花费时间 : {0}ms", Client.RemoteCostTime);
+                    logger.State = UILogger.StateEnum.Normal;
+                    state = MainState.AgentRunning;
+                }
             }
         }
-        if (state == MainState.AI_Running)
+        if (state == MainState.AgentRunning)
         {
-            if (DoAIAction())
-            {
-                NextTurn();
+            if (gameMode == GameMode.AI) {
+                if (DoAIAction()) {
+                    NextTurn();
+                }
+            }
+            else if (gameMode == GameMode.Multiplayer) {
+                if (DoRemoteAction()) {
+                    NextTurn();
+                }
             }
         }
         else

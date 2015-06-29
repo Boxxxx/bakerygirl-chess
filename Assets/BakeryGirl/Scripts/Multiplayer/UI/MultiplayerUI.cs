@@ -17,7 +17,6 @@ namespace BakeryGirl.Chess.Multiplayer {
         public UIInput nicknameLabel;
         public UIInput roomPwdLabel;
         public NGUIButtonHandler randomMatchButton;
-        public NGUIButtonHandler pwdMatchButton;
 
         public UIPanel connectingPanel;
         public UILabel connectingLabel;
@@ -29,7 +28,6 @@ namespace BakeryGirl.Chess.Multiplayer {
         public GameObject[] mainGameComponents = {};
 
         private EntryState _state = EntryState.None;
-        private GameClient _client;
 
         private string Nickname {
             get {
@@ -78,6 +76,7 @@ namespace BakeryGirl.Chess.Multiplayer {
             }
         }
 
+        #region Unity Callbakcs
         void Awake() {
             // load stored nickname in playerPrefs
             string prefsName = PlayerPrefs.GetString(kUserNamePlayerPref);
@@ -100,13 +99,16 @@ namespace BakeryGirl.Chess.Multiplayer {
             }
         }
 
+        void OnGUI() {
+            //if (CurrentState == EntryState.GamePlay) {
+            //    if (GUI.Button(new Rect(300, 300, 100, 50), "NextTurn")) {
+            //        GameClientWrapper.ClientInstance.EndTurn();
+            //    }
+            //}
+        }
+
         void RegisterButtonCBs() {
             randomMatchButton.clickedHandle += (data, index) => {
-                PlayerPrefs.SetString(kUserNamePlayerPref, Nickname);
-                GameClientWrapper.Instance.Connect(Nickname);
-                CurrentState = EntryState.Connecting;
-            };
-            pwdMatchButton.clickedHandle += (data, index) => {
                 PlayerPrefs.SetString(kUserNamePlayerPref, Nickname);
                 GameClientWrapper.Instance.Connect(Nickname);
                 CurrentState = EntryState.Connecting;
@@ -127,6 +129,7 @@ namespace BakeryGirl.Chess.Multiplayer {
             GameClientWrapper.ClientInstance.onCloseRoom += OnCloseRoom;
             GameClientWrapper.ClientInstance.onGameStart += OnGameStart;
         }
+        #endregion
 
         #region Events
         void OnSwitchState(EntryState newState, EntryState oldState) { }
