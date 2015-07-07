@@ -1,11 +1,8 @@
-﻿using UnityEngine;
-using System;
-using System.Collections;
+﻿using System;
+using UnityEngine;
 
-namespace BakeryGirl.Chess.Multiplayer {
-    using Hashtable = ExitGames.Client.Photon.Hashtable;
-
-    public class GameClientWrapper : MonoBehaviour {
+namespace BakeryGirl.Chess {
+    public class GameClientWrapper : PlayerAgent {
         private static GameClientWrapper _instance = null;
         public static GameClientWrapper Instance {
             get {
@@ -27,6 +24,8 @@ namespace BakeryGirl.Chess.Multiplayer {
         public string appId = string.Empty;
         public string appVersion = "v1.0.0";
         public string region = "EU";
+
+        private StateEnum _state = StateEnum.Idle;
 
         public GameClient Client {
             get;
@@ -67,6 +66,33 @@ namespace BakeryGirl.Chess.Multiplayer {
         #region Public Interfaces
         public void Connect(string nickname) {
             Client.Connect(nickname, region);
+        }
+        #endregion
+
+        #region Agent Interfaces
+        public override StateEnum State { get { return _state; } }
+        public override void Think(Board board, Action<PlayerAction[], float> complete = null)
+        {
+            throw new NotImplementedException();
+        }
+        public override void Initialize()
+        {
+        }
+        public override bool SwitchTurn(Unit.OwnerEnum nowTurn)
+        {
+            if (Client.IsMyTurn)
+            {
+                Client.EndTurn();
+            }
+            return !Client.IsMyTurn;
+        }
+        public override float GetCostTime()
+        {
+            return 0;
+        }
+        public override PlayerAction NextAction()
+        {
+            return new PlayerAction();
         }
         #endregion
     }

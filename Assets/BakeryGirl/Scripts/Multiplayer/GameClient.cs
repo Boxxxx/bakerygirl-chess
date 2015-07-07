@@ -1,12 +1,9 @@
 ﻿using ExitGames.Client.Photon;
-using ExitGames.Client.Photon.Lite;
 using ExitGames.Client.Photon.LoadBalancing;
 using UnityEngine;
 using System;
-using System.Collections;
-using System.Collections.Generic;
 
-namespace BakeryGirl.Chess.Multiplayer {
+namespace BakeryGirl.Chess {
     using Random = UnityEngine.Random;
     using Hashtable = ExitGames.Client.Photon.Hashtable;
 
@@ -271,20 +268,6 @@ namespace BakeryGirl.Chess.Multiplayer {
                 interestingProps += prop.Key + ":" + prop.Value;
             }
             return interestingProps + "]";
-        }
-        #endregion
-
-        #region Remote Action
-        public AI_Action GetRemoteAction() {
-            throw new NotImplementedException();
-        }
-
-        public bool IsReceivedRemoteAction {
-            get { throw new NotImplementedException(); }
-        }
-
-        public float RemoteCostTime {
-            get { throw new NotImplementedException(); }
         }
         #endregion
 

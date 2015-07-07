@@ -1,7 +1,6 @@
-﻿using UnityEngine;
-using System;
-using System.Collections;
+﻿using System;
 using System.Collections.Generic;
+using BakeryGirl.Chess;
 
 /// <summary>
 /// A simulator of game play, can do any movement in raw data
@@ -69,7 +68,7 @@ public class GameDescriptor : ICloneable
         return true;
     }
 
-    public void DoAction(AI_Action action)
+    public void DoAction(PlayerAction action)
     {
         action.Do(this);
         NewTurn();
@@ -234,9 +233,9 @@ public class GameDescriptor : ICloneable
         return actionList;
     }
  
-    public List<AI_Action> QueryAllActions_Slow()
+    public List<PlayerAction> QueryAllActions_Slow()
     {
-        List<AI_Action> actions = new List<AI_Action>();
+        List<PlayerAction> actions = new List<PlayerAction>();
         GameDescriptor stage1, stage2;
         List<BuyAction> buyList1 = QueryBuyActions(), buyList2;
         List<MoveAction> moveList;
@@ -260,24 +259,24 @@ public class GameDescriptor : ICloneable
                         if (buy2.type != Unit.TypeEnum.Void)
                         {
                             buy2.status = BuyAction.Status.After_Move;
-                            actions.Add(new AI_Action(move, buy2));
+                            actions.Add(new PlayerAction(move, buy2));
                         }
                     }
-                    actions.Add(new AI_Action(move));
+                    actions.Add(new PlayerAction(move));
                 }
                 else
                 {
                     buy1.status = BuyAction.Status.Before_Move;
-                    actions.Add(new AI_Action(move, buy1));
+                    actions.Add(new PlayerAction(move, buy1));
                 }
             }
         }
         
         return actions;
     }
-    public List<AI_Action> QueryAllActions()
+    public List<PlayerAction> QueryAllActions()
     {
-        List<AI_Action> actions = new List<AI_Action>();
+        List<PlayerAction> actions = new List<PlayerAction>();
 
         List<BuyAction> buyList1 = QueryBuyActions(), buyList2;
         List<MoveAction> moveList;
@@ -300,15 +299,15 @@ public class GameDescriptor : ICloneable
                         if (buy2.type != Unit.TypeEnum.Void)
                         {
                             buy2.status = BuyAction.Status.After_Move;
-                            actions.Add(new AI_Action(move, buy2));
+                            actions.Add(new PlayerAction(move, buy2));
                         }
                     }
-                    actions.Add(new AI_Action(move));
+                    actions.Add(new PlayerAction(move));
                 }
                 else
                 {
                     buy1.status = BuyAction.Status.Before_Move;
-                    actions.Add(new AI_Action(move, buy1));
+                    actions.Add(new PlayerAction(move, buy1));
                 }
                 move.UnDo(this);
             }

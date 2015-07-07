@@ -1,10 +1,7 @@
-﻿using ExitGames.Client.Photon;
-using ExitGames.Client.Photon.Lite;
-using ExitGames.Client.Photon.LoadBalancing;
+﻿using ExitGames.Client.Photon.LoadBalancing;
 using UnityEngine;
-using System.Collections;
 
-namespace BakeryGirl.Chess.Multiplayer {
+namespace BakeryGirl.Chess {
     public class MultiplayerUI : MonoBehaviour {
         private const string kUserNamePlayerPref = "NamePickUserName";
         private const string kDefaultUserName = "Jefuty";

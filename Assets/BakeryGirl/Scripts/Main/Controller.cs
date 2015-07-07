@@ -2,7 +2,7 @@
 using System;
 using System.Collections;
 using System.Collections.Generic;
-using BakeryGirl.Chess.Multiplayer;
+using BakeryGirl.Chess;
 
 /// <summary>
 /// Drag Event to maintain drag action in controller
@@ -144,7 +144,7 @@ public class Controller : MonoBehaviour
     public enum MoveState { Idle, Pick, Occupy };
     public enum MainState { Ready, Move, Wait, Over, AgentThinking, AgentRunning };
     public enum PhaseState { Player, Agent, Other};
-    public enum GameMode { Normal, AI, Multiplayer, Stay};
+    public enum GameMode { Normal, Agent, Stay};
     public enum EffectType { Unknown, Move, CollectBread, Killout, MoveIn};
     #endregion
 
@@ -158,7 +158,7 @@ public class Controller : MonoBehaviour
     public ResultSprite resultSprite;
     public UILogger logger;
     private GameMode gameMode = GameMode.Normal;
-    public AIPlayer ai;
+    public PlayerAgent agent;
     //public string aiClassName = "";
 
     private MoveState moveState;
@@ -309,11 +309,8 @@ public class Controller : MonoBehaviour
         resultSprite.gameObject.SetActive(false);
         turnOverButton.gameObject.SetActive(false);
 
-        if (gameMode == GameMode.AI) {
-            InitAI();
-        }
-        else if (gameMode == GameMode.Multiplayer) {
-            InitMultiplayer();
+        if (gameMode == GameMode.Agent) {
+            InitAgent();
         }
         logger.Text = "";
         logger.State = UILogger.StateEnum.Normal;
@@ -325,11 +322,8 @@ public class Controller : MonoBehaviour
     private void NewTurn()
     {
         storage.SwitchTurn(turn);
-        if (gameMode == GameMode.AI) {
-            BeginAILogic();
-        }
-        else if (gameMode == GameMode.Multiplayer) {
-            BeginMultiplayerLogic();
+        if (gameMode == GameMode.Agent) {
+            AgentSwitchTurn();
         }
         turnOverButton.gameObject.SetActive(false);
     }
@@ -450,55 +444,27 @@ public class Controller : MonoBehaviour
     }
     #endregion
 
-    #region AI Functions
-    private void InitAI()
+    #region Agent Functions
+    private void InitAgent()
     {
-        //Type type = Type.GetType(typeof(AIPlayer).Namespace + "." + aiClassName, true, true);
-        //ai = Activator.CreateInstance(type) as AIPlayer;
-        ai.Initialize();
+        agent.Initialize();
     }
-    private void BeginAILogic()
+    private void AgentSwitchTurn()
     {
-        if(ai.MyTurn == turn)
+        if(agent.SwitchTurn(turn))
         {
             state = MainState.AgentThinking;
-            ai.Think(board);
-            logger.Text = "思考中";
+            agent.Think(board);
+            logger.Text = agent.waitingText;
             logger.State = UILogger.StateEnum.Dot;
         }
     }
-    private bool DoAIAction()
+    private bool DoAgentAction()
     {
-        AI_Action action = ai.GetAcition();
-        if (action.type == AI_Action.Type.Complete)
+        PlayerAction action = agent.NextAction();
+        if (action.type == PlayerAction.Type.Complete)
             return true;
-        else if (action.type == AI_Action.Type.Move)
-            Move(board.GetUnit(action.move.src), board.GetUnit(action.move.tar), action.move.tar);
-        else
-            Buy(action.buy.type);
-        return false;
-    }
-    #endregion
-
-    #region Multiplayer Functions
-    private void InitMultiplayer() {
-    }
-
-    private void BeginMultiplayerLogic() {
-        if (Client.IsMyTurn) {
-            Client.EndTurn();
-        }
-        if (!Client.IsMyTurn) {
-            state = MainState.AgentThinking;
-            logger.Text = "等待对手行动";
-            logger.State = UILogger.StateEnum.Dot;
-        }
-    }
-    private bool DoRemoteAction() {
-        AI_Action action = Client.GetRemoteAction();
-        if (action.type == AI_Action.Type.Complete)
-            return true;
-        else if (action.type == AI_Action.Type.Move)
+        else if (action.type == PlayerAction.Type.Move)
             Move(board.GetUnit(action.move.src), board.GetUnit(action.move.tar), action.move.tar);
         else
             Buy(action.buy.type);
@@ -531,16 +497,9 @@ public class Controller : MonoBehaviour
 
         if (state == MainState.AgentThinking)
         {
-            if (gameMode == GameMode.AI) {
-                if (ai.State == AIPlayer.StateEnum.Complete) {
-                    logger.Text = string.Format("花费时间 : {0}ms", ai.CostTime);
-                    logger.State = UILogger.StateEnum.Normal;
-                    state = MainState.AgentRunning;
-                }
-            }
-            else if (gameMode == GameMode.Multiplayer) {
-                if (Client.IsReceivedRemoteAction) {
-                    logger.Text = string.Format("花费时间 : {0}ms", Client.RemoteCostTime);
+            if (gameMode == GameMode.Agent) {
+                if (agent.State == PlayerAgent.StateEnum.Complete) {
+                    logger.Text = string.Format("花费时间 : {0}ms", agent.GetCostTime());
                     logger.State = UILogger.StateEnum.Normal;
                     state = MainState.AgentRunning;
                 }
@@ -548,13 +507,8 @@ public class Controller : MonoBehaviour
         }
         if (state == MainState.AgentRunning)
         {
-            if (gameMode == GameMode.AI) {
-                if (DoAIAction()) {
-                    NextTurn();
-                }
-            }
-            else if (gameMode == GameMode.Multiplayer) {
-                if (DoRemoteAction()) {
+            if (gameMode == GameMode.Agent) {
+                if (DoAgentAction()) {
                     NextTurn();
                 }
             }

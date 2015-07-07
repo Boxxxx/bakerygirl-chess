@@ -1,7 +1,7 @@
 ﻿using UnityEngine;
 using System.Collections;
 
-namespace BakeryGirl.Chess.Multiplayer {
+namespace BakeryGirl.Chess {
     public static class Consts {
         public static class PropNames {
             public const string RoomPwd = "pwd";

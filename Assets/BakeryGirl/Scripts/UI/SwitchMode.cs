@@ -25,7 +25,7 @@ public class SwitchMode : MonoBehaviour {
     void OnClick()
     {
         controller = GlobalInfo.Instance.controller;
-        controller.RestartGame(controller.Mode == Controller.GameMode.Normal ? Controller.GameMode.AI : Controller.GameMode.Normal);
+        controller.RestartGame(controller.Mode == Controller.GameMode.Normal ? Controller.GameMode.Agent : Controller.GameMode.Normal);
 
         RefreshText();
     }

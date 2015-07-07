@@ -1,7 +1,6 @@
-﻿using UnityEngine;
-using System;
-using System.Collections;
+﻿using System;
 using System.Collections.Generic;
+using BakeryGirl.Chess;
 
 /// <summary>
 /// A simple AI implemented by alpha-beta search of game theory
@@ -32,10 +31,10 @@ public class SimpleAI : AIPlayer
             return Evaluator.Evaluate(descriptor) - depth; // the quicker, the better
         }
 
-        List<AI_Action> actions = descriptor.QueryAllActions();
+        List<PlayerAction> actions = descriptor.QueryAllActions();
         Disturb(actions);
 
-        foreach (AI_Action tryAction in actions)
+        foreach (PlayerAction tryAction in actions)
         {
             descriptor.DoAction(tryAction);
             var tmp = -AlphaBeta(descriptor, depth - 1, -beta, -alpha);
@@ -64,10 +63,10 @@ public class SimpleAI : AIPlayer
             return Evaluator.Evaluate(descriptor) - depth;
         }
 
-        List<AI_Action> actions = descriptor.QueryAllActions_Slow();
+        List<PlayerAction> actions = descriptor.QueryAllActions_Slow();
         Disturb(actions);
 
-        foreach (AI_Action tryAction in actions)
+        foreach (PlayerAction tryAction in actions)
         {
             GameDescriptor clone = descriptor.Clone() as GameDescriptor;
             clone.DoAction(tryAction);
@@ -85,7 +84,7 @@ public class SimpleAI : AIPlayer
         return alpha;
     }
 
-    private void Disturb(List<AI_Action> actions)
+    private void Disturb(List<PlayerAction> actions)
     {
         long tick = DateTime.Now.Ticks;
         System.Random random = new System.Random((int)(tick & 0xffffffffL) | (int)(tick >> 32));
@@ -95,7 +94,7 @@ public class SimpleAI : AIPlayer
             int indexA = random.Next(0, actions.Count),
                 indexB = random.Next(0, actions.Count);
 
-            AI_Action tmp = actions[indexA];
+            PlayerAction tmp = actions[indexA];
             actions[indexA] = actions[indexB];
             actions[indexB] = tmp;
         }
