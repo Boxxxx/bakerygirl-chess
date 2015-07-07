@@ -1,10 +1,6 @@
 ﻿using UnityEngine;
-using System;
-using System.Collections;
 
-namespace BakeryGirl.Chess.Multiplayer {
-    using Hashtable = ExitGames.Client.Photon.Hashtable;
-
+namespace BakeryGirl.Chess {
     public class GameClientWrapper : MonoBehaviour {
         private static GameClientWrapper _instance = null;
         public static GameClientWrapper Instance {

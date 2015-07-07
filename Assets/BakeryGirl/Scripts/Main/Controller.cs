@@ -2,6 +2,7 @@
 using System;
 using System.Collections;
 using System.Collections.Generic;
+using BakeryGirl.Chess;
 
 /// <summary>
 /// Drag Event to maintain drag action in controller
@@ -157,7 +158,7 @@ public class Controller : MonoBehaviour
     public ResultSprite resultSprite;
     public UILogger logger;
     private GameMode gameMode = GameMode.Normal;
-    public AIPlayer ai;
+    public IPlayerAgent agent;
     //public string aiClassName = "";
 
     private MoveState moveState;
@@ -440,24 +441,24 @@ public class Controller : MonoBehaviour
     {
         //Type type = Type.GetType(typeof(AIPlayer).Namespace + "." + aiClassName, true, true);
         //ai = Activator.CreateInstance(type) as AIPlayer;
-        ai.Initialize();
+        agent.Initialize();
     }
     private void BeginAILogic()
     {
-        if(ai.MyTurn == turn)
+        if(agent.MyTurn == turn)
         {
             state = MainState.AI_Thinking;
-            ai.Think(board);
+            agent.Think(board);
             logger.Text = "思考中";
             logger.State = UILogger.StateEnum.Dot;
         }
     }
     private bool DoAIAction()
     {
-        AI_Action action = ai.GetAcition();
-        if (action.type == AI_Action.Type.Complete)
+        PlayerAction action = agent.NextAction();
+        if (action.type == PlayerAction.Type.Complete)
             return true;
-        else if (action.type == AI_Action.Type.Move)
+        else if (action.type == PlayerAction.Type.Move)
             Move(board.GetUnit(action.move.src), board.GetUnit(action.move.tar), action.move.tar);
         else
             Buy(action.buy.type);
@@ -490,9 +491,9 @@ public class Controller : MonoBehaviour
 
         if (state == MainState.AI_Thinking)
         {
-            if (ai.State == AIPlayer.StateEnum.Complete)
+            if (agent.State == StateEnum.Complete)
             {
-                logger.Text = string.Format("花费时间 : {0}ms", ai.CostTime);
+                logger.Text = string.Format("花费时间 : {0}ms", agent.GetCostTime());
                 logger.State = UILogger.StateEnum.Normal;
                 state = MainState.AI_Running;
             }

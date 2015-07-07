@@ -1,12 +1,9 @@
 ﻿using ExitGames.Client.Photon;
-using ExitGames.Client.Photon.Lite;
 using ExitGames.Client.Photon.LoadBalancing;
 using UnityEngine;
 using System;
-using System.Collections;
-using System.Collections.Generic;
 
-namespace BakeryGirl.Chess.Multiplayer {
+namespace BakeryGirl.Chess {
     using Random = UnityEngine.Random;
     using Hashtable = ExitGames.Client.Photon.Hashtable;
 
