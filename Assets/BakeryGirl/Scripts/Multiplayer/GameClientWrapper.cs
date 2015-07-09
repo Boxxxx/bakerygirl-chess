@@ -25,8 +25,6 @@ namespace BakeryGirl.Chess {
         public string appVersion = "v1.0.0";
         public string region = "EU";
 
-        private StateEnum _state = StateEnum.Idle;
-
         public GameClient Client {
             get;
             private set;
@@ -70,13 +68,12 @@ namespace BakeryGirl.Chess {
         #endregion
 
         #region Agent Interfaces
-        public override StateEnum State { get { return _state; } }
         public override void Think(Board board, Action<PlayerAction[], float> complete = null)
         {
             throw new NotImplementedException();
         }
-        public override void Initialize()
-        {
+        public override void Initialize() {
+            base.Initialize();
         }
         public override bool SwitchTurn(Unit.OwnerEnum nowTurn)
         {
@@ -85,14 +82,6 @@ namespace BakeryGirl.Chess {
                 Client.EndTurn();
             }
             return !Client.IsMyTurn;
-        }
-        public override float GetCostTime()
-        {
-            return 0;
-        }
-        public override PlayerAction NextAction()
-        {
-            return new PlayerAction();
         }
         #endregion
     }

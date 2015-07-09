@@ -96,11 +96,8 @@ public abstract class AIPlayer : PlayerAgent
     protected GameDescriptor descriptor;
     protected PlayerAction action;
     protected int nodeCount;
-    private StateEnum state = StateEnum.Idle;
-    private float costTime;
     private List<PlayerAction> actions = new List<PlayerAction>();
     private Thread aiTask;
-    private Action<PlayerAction[], float> _complete;
     #endregion
 
     #region Properties
@@ -117,11 +114,6 @@ public abstract class AIPlayer : PlayerAgent
         get { return action; }
     }
     public Unit.OwnerEnum MyTurn { get { return myTurn; } }
-    public override StateEnum State { get { return state; } }
-    public float CostTime
-    {
-        get { return costTime*1000; }
-    }
     public int Node
     {
         get { return nodeCount; }
@@ -129,15 +121,9 @@ public abstract class AIPlayer : PlayerAgent
     #endregion
 
     #region Public Interface
-    public override float GetCostTime()
-    {
-        return CostTime;
-    }
     public override void Think(Board board, Action<PlayerAction[], float> complete = null)
     {
-        state = StateEnum.Thinking;
-
-        costTime = Time.realtimeSinceStartup;
+        base.Think(board, complete);
 
         descriptor = new GameDescriptor(board, myTurn);
         action = new PlayerAction();
@@ -146,25 +132,12 @@ public abstract class AIPlayer : PlayerAgent
         aiTask = new Thread(DoCalculate);
         aiTask.Start();
         //DoCalculate();
-
-        _complete = complete;
-    }
-    public override PlayerAction NextAction()
-    {
-        if (actions.Count == 0)
-            return new PlayerAction();
-        PlayerAction action = actions[0];
-        actions.RemoveAt(0);
-        if (actions.Count == 0)
-            state = StateEnum.Idle;
-
-        return action;
     }
     public override void Initialize()
     {
+        base.Initialize();
         if (aiTask != null)
             aiTask.Interrupt();
-        state = StateEnum.Idle;
     }
     public override bool SwitchTurn(Unit.OwnerEnum nowTurn)
     {
@@ -173,37 +146,25 @@ public abstract class AIPlayer : PlayerAgent
     #endregion
 
     #region Private or Protected Functions
-    private void UnpackAction()
+    private List<PlayerAction> UnpackAction()
     {
+        var actions = new List<PlayerAction>();
         if (action.buy != null && action.buy.status == BuyAction.Status.Before_Move)
             actions.Add(new PlayerAction(action.buy));
         actions.Add(new PlayerAction(action.move));
         if (action.buy != null && action.buy.status == BuyAction.Status.After_Move)
             actions.Add(new PlayerAction(action.buy));
+        return actions;
     }
     protected abstract void DoCalculate();
-    protected void Add(PlayerAction action)
-    {
-        actions.Add(action);
-    }
     #endregion
 
     #region Unity Callback Functions
     void Update()
     {
-        if (state == StateEnum.Thinking && !aiTask.IsAlive)
+        if (State == StateEnum.Thinking && !aiTask.IsAlive)
         {
-            state = StateEnum.Complete;
-
-            actions.Clear();
-            UnpackAction();
-
-            costTime = Time.realtimeSinceStartup - costTime;
-
-            if (_complete != null)
-            {
-                _complete(actions.ToArray(), costTime);
-            }
+            Complete(UnpackAction());
         }
     }
     #endregion
