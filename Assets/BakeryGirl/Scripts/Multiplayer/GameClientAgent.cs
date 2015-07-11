@@ -90,12 +90,11 @@ namespace BakeryGirl.Chess {
         }
         public override void OnMove(bool isAgent, PlayerAction[] actions)
         {
-            if (isAgent) {
-                Client.VerifyBoardFromProperties();
-            }
-            if (!isAgent)
-            {
+            if (!isAgent) {
                 Client.SendMove(actions);
+            }
+            else {
+                Client.VerifyBoardFromProperties();
             }
         }
         public override void Think(Board board, Action<PlayerAction[], float> complete = null)

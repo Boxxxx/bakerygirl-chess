@@ -394,7 +394,8 @@ namespace BakeryGirl.Chess {
             }
 
             // only push my own resource num
-            hashtable.Add(Consts.PropNames.GetPlayerResourceKey(LocalPlayer.ID), GlobalInfo.Instance.storage.GetResourceNum(MyTurn));
+            int resource = GlobalInfo.Instance.storage.GetResourceNum(MyTurn);
+            hashtable.Add(Consts.PropNames.GetPlayerResourceKey(LocalPlayer.ID), resource);
 
             for (int i = 0; i < BoardInfo.Row; i++) {
                 for (int j = 0; j < BoardInfo.Col; j++) {
@@ -403,7 +404,7 @@ namespace BakeryGirl.Chess {
                 }
             }
 
-            Debug.Log("Sending out board info.");
+            Debug.Log(string.Format("Sending out board info, the resource of mine:{0} is {1}, the board is:\n{2}", MyTurn, resource, GetBoardDebugInfo(board)));
         }
 
         public bool VerifyBoardFromProperties() {
@@ -429,11 +430,15 @@ namespace BakeryGirl.Chess {
                 return true;
             }
 
+            Debug.Log(GetBoardDebugInfo(board));
+
             // Verify opponent resourceNum (not need for my own)
             var resourceKey = Consts.PropNames.GetPlayerResourceKey(Opponent.ID);
             if (hashtable.ContainsKey(resourceKey)) {
                 int resource = (int)hashtable[resourceKey];
                 if (resource != GlobalInfo.Instance.storage.GetResourceNum(OpponentTurn)) {
+                    Debug.LogWarning(string.Format("[GameClient] resource unmatch, the local is {0}, remote is {1}.",
+                        GlobalInfo.Instance.storage.GetResourceNum(OpponentTurn), resource));
                     return false;
                 }
             }
@@ -447,12 +452,29 @@ namespace BakeryGirl.Chess {
                         Unit.TypeEnum type = (Unit.TypeEnum)hashtable[slotTypeKey];
                         Unit.OwnerEnum owner = (Unit.OwnerEnum)hashtable[slotOwnerKey];
                         if (type != board[i, j].Key || owner != board[i, j].Value) {
+                            Debug.LogWarning(string.Format("[GameClient] board unmatch at ({0}, {1}), the local is {2}-{3}, remote is {4}-{5}.",
+                                i, j, board[i, j].Key, board[i, j].Value, type, owner));
                             return false;
                         }
                     }
                 }
             }
             return true;
+        }
+
+        private string GetBoardDebugInfo(SlotInfo[,] board) {
+            // output board
+            string output = "";
+            output += "[";
+            for (int i = 0; i < BoardInfo.Row; i++) {
+                output += "[";
+                for (int j = 0; j < BoardInfo.Col; j++) {
+                    output += (j == 0 ? "" : ", ") + string.Format("({0}, {1})", board[i, j].Key, board[i, j].Value);
+                }
+                output += "]\n";
+            }
+            output += "]";
+            return output;
         }
 
         private void SavePlayersInProps(Hashtable hashtable) {

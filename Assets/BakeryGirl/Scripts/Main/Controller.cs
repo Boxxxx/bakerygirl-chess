@@ -142,7 +142,7 @@ public class Controller : MonoBehaviour
 {
     #region Enums
     public enum MoveState { Idle, Pick, Occupy };
-    public enum MainState { Uninitialized, Ready, Move, Wait, Over, AgentThinking, AgentRunning };
+    public enum MainState { Uninitialized, Ready, Move, Wait, Over, AgentThinking, AgentRunning, AgentEffectWaiting };
     public enum PhaseState { Player, Agent, Other};
     public enum GameMode { Normal, Agent, Stay};
     public enum EffectType { Unknown, Move, CollectBread, Killout, MoveIn};
@@ -217,13 +217,13 @@ public class Controller : MonoBehaviour
         NewGame(newMode == GameMode.Stay ? gameMode : newMode);
         StartGame();
     }
-    public void NextTurn(bool myself = false)
+    public void NextTurn(bool lastTurnIsMe = false)
     {
-        if (myself)
-        {
+        if (lastTurnIsMe) {
             DoAction(PlayerAction.CreateComplete());
         }
-        if (state == MainState.Wait || state == MainState.AgentRunning)
+        _DoTurnOver();
+        if (state == MainState.Wait || state == MainState.AgentRunning || state == MainState.AgentEffectWaiting)
         {
             Ruler.GameResult result = Ruler.CheckGame(board);
             if (result == Ruler.GameResult.NotYet)
@@ -246,6 +246,7 @@ public class Controller : MonoBehaviour
     public void StartEffect(EffectType effect = EffectType.Unknown)
     {
         effectNum++;
+        turnOverButton.gameObject.SetActive(false);
     }
 
     public void StopEffect(EffectType effect = EffectType.Unknown)
@@ -259,7 +260,7 @@ public class Controller : MonoBehaviour
                 lastMove.Focus = true;
             }
         }
-        if (state == MainState.Wait)
+        if (state == MainState.Wait && effectNum == 0)
             turnOverButton.gameObject.SetActive(true);
     }
 
@@ -286,7 +287,6 @@ public class Controller : MonoBehaviour
         bread.Owner = owner;
         // set 
         bread.setSpriteId(Unit.GetSpriteIdByName("bread_static"));
-        GlobalInfo.Instance.board.ModifyPlayerInfo(Unit.TypeEnum.Bread, owner, 1);
         iTween.MoveTo(bread.gameObject, iTween.Hash("position", storage.GetCollectPoint(owner), "time", 1f, "oncomplete", "OnDisappearComplete", "oncompletetarget", bread.gameObject));
         StartEffect(EffectType.CollectBread);
     }
@@ -425,7 +425,7 @@ public class Controller : MonoBehaviour
     #endregion
 
     #region Actions
-    private bool _DoOver()
+    private bool _DoTurnOver()
     {
         var actions = _actionsCurrentTurn.ToArray();
         _actionsCurrentTurn.Clear();
@@ -433,7 +433,7 @@ public class Controller : MonoBehaviour
         _actionLogs.Add(actions);
         if (agent != null)
         {
-            agent.OnMove(state == MainState.AgentRunning, actions);
+            agent.OnMove(state == MainState.AgentThinking || state == MainState.AgentRunning || state == MainState.AgentEffectWaiting, actions);
         }
 
         return true;
@@ -504,9 +504,6 @@ public class Controller : MonoBehaviour
             flag = _DoBuy(action.buy.type);
         if (flag) {
             _actionsCurrentTurn.Add(action);
-            if (action.type == PlayerAction.Type.Complete) {
-                _DoOver();
-            }
         }
         return flag;
     }
@@ -549,9 +546,12 @@ public class Controller : MonoBehaviour
         {
             if (gameMode == GameMode.Agent) {
                 if (DoAgentAction()) {
-                    NextTurn();
+                    state = MainState.AgentEffectWaiting;
                 }
             }
+        }
+        else if (state == MainState.AgentEffectWaiting) {
+            NextTurn();
         }
         else
         {
