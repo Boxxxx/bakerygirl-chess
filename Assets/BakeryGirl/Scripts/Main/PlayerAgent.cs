@@ -154,10 +154,6 @@ namespace BakeryGirl.Chess {
 
             return action;
         }
-        // On action received
-        public virtual void OnMove(bool isAgent, PlayerAction[] actions) {
-            Debug.Log((isAgent ? "It is agent turn" : "It is player turn") + " and the action num is " + actions.Length);
-        }
         // Get cost time in seconds
         public float GetCostTime()
         {
@@ -172,6 +168,14 @@ namespace BakeryGirl.Chess {
             if (_complete != null) {
                 _complete(_actions.ToArray(), _costTime);
             }
+        }
+
+        // On action received
+        public virtual void OnMove(bool isAgent, PlayerAction[] actions) {
+            Debug.Log((isAgent ? "It is agent turn" : "It is player turn") + " and the action num is " + actions.Length);
+        }
+        public virtual void OnGameOver(Ruler.GameResult result) {
+            Debug.Log("Game Over, result is " + result);
         }
     }
 }

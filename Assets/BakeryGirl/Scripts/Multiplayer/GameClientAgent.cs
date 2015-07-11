@@ -88,15 +88,6 @@ namespace BakeryGirl.Chess {
         {
             base.Initialize();
         }
-        public override void OnMove(bool isAgent, PlayerAction[] actions)
-        {
-            if (!isAgent) {
-                Client.SendMove(actions);
-            }
-            else {
-                Client.VerifyBoardFromProperties();
-            }
-        }
         public override void Think(Board board, Action<PlayerAction[], float> complete = null)
         {
             base.Think(board, complete);
@@ -105,6 +96,14 @@ namespace BakeryGirl.Chess {
         public override bool SwitchTurn(Unit.OwnerEnum nowTurn, bool initial)
         {
             return !Client.IsPlayerTurn;
+        }
+        public override void OnMove(bool isAgent, PlayerAction[] actions) {
+            if (!isAgent) {
+                Client.SendMove(actions);
+            }
+            else {
+                Client.VerifyBoardFromProperties();
+            }
         }
         #endregion
     }

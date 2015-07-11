@@ -1,7 +1,15 @@
 using UnityEngine;
 using System.Collections.Generic;
 
-using SlotInfo = System.Collections.Generic.KeyValuePair<Unit.TypeEnum, Unit.OwnerEnum>;
+public class SlotInfo {
+    public Unit.TypeEnum type = Unit.TypeEnum.Void;
+    public Unit.OwnerEnum owner = Unit.OwnerEnum.None;
+    public bool hasBread = false;
+
+    public override string ToString() {
+        return string.Format("({0}, {1}, {2})", type, owner, hasBread);
+    }
+}
 
 /// <summary>
 /// Maintain Chessboard and game turn
@@ -291,10 +299,18 @@ public class Board : MonoBehaviour
         for (int i = 0; i < BoardInfo.Row; i++) {
             for (int j = 0; j < BoardInfo.Col; j++) {
                 if (boardUnit[i, j] == null) {
-                    boardSummary[i, j] = new KeyValuePair<Unit.TypeEnum, Unit.OwnerEnum>(Unit.TypeEnum.Void, Unit.OwnerEnum.None);
+                    boardSummary[i, j] = new SlotInfo() {
+                        type = Unit.TypeEnum.Void,
+                        owner = Unit.OwnerEnum.None,
+                        hasBread = boardBread[i, j] == null ? false : boardBread[i, j].Type == Unit.TypeEnum.Bread
+                    };
                 }
                 else {
-                    boardSummary[i, j] = new KeyValuePair<Unit.TypeEnum, Unit.OwnerEnum>(boardUnit[i, j].Type, boardUnit[i, j].Owner);
+                    boardSummary[i, j] = new SlotInfo() {
+                        type = boardUnit[i, j].Type,
+                        owner = boardUnit[i, j].Owner,
+                        hasBread = boardBread[i, j] == null ? false : boardBread[i, j].Type == Unit.TypeEnum.Bread
+                    };
                 }
             }
         }

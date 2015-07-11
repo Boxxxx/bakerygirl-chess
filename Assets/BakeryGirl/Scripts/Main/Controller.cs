@@ -345,6 +345,7 @@ public class Controller : MonoBehaviour
     }
     private void OnGameOver()
     {
+        agent.OnGameOver(result);
         resultSprite.gameObject.SetActive(true);
         resultSprite.OnGameOver(result);
     }

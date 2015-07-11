@@ -7,7 +7,6 @@ using System.Collections.Generic;
 namespace BakeryGirl.Chess {
     using Random = UnityEngine.Random;
     using Hashtable = ExitGames.Client.Photon.Hashtable;
-    using SlotInfo = KeyValuePair<Unit.TypeEnum, Unit.OwnerEnum>;
 
     public interface IPhotonNetworkMsg {
         Dictionary<string, object> ToMsg();
@@ -399,8 +398,9 @@ namespace BakeryGirl.Chess {
 
             for (int i = 0; i < BoardInfo.Row; i++) {
                 for (int j = 0; j < BoardInfo.Col; j++) {
-                    hashtable.Add(Consts.PropNames.GetBoardSlotTypeKey(i, j), board[i, j].Key);
-                    hashtable.Add(Consts.PropNames.GetBoardSlotOwnerKey(i, j), board[i, j].Value);
+                    hashtable.Add(Consts.PropNames.GetBoardSlotTypeKey(i, j), board[i, j].type);
+                    hashtable.Add(Consts.PropNames.GetBoardSlotOwnerKey(i, j), board[i, j].owner);
+                    hashtable.Add(Consts.PropNames.GetBoardSlotBreadKey(i, j), board[i, j].hasBread);
                 }
             }
 
@@ -448,12 +448,14 @@ namespace BakeryGirl.Chess {
                 for (int j = 0; j < BoardInfo.Col; j++) {
                     var slotTypeKey = Consts.PropNames.GetBoardSlotTypeKey(i, j);
                     var slotOwnerKey = Consts.PropNames.GetBoardSlotOwnerKey(i, j);
-                    if (hashtable.ContainsKey(slotTypeKey) && hashtable.ContainsKey(slotOwnerKey)) {
+                    var slotBreadKey = Consts.PropNames.GetBoardSlotBreadKey(i, j);
+                    if (hashtable.ContainsKey(slotTypeKey) && hashtable.ContainsKey(slotOwnerKey) && hashtable.ContainsKey(slotBreadKey)) {
                         Unit.TypeEnum type = (Unit.TypeEnum)hashtable[slotTypeKey];
                         Unit.OwnerEnum owner = (Unit.OwnerEnum)hashtable[slotOwnerKey];
-                        if (type != board[i, j].Key || owner != board[i, j].Value) {
-                            Debug.LogWarning(string.Format("[GameClient] board unmatch at ({0}, {1}), the local is {2}-{3}, remote is {4}-{5}.",
-                                i, j, board[i, j].Key, board[i, j].Value, type, owner));
+                        bool hasBread = (bool)hashtable[slotBreadKey];
+                        if (type != board[i, j].type || owner != board[i, j].owner || hasBread != board[i, j].hasBread) {
+                            Debug.LogWarning(string.Format("[GameClient] board unmatch at ({0}, {1}), the local is {2}, remote is {3}.",
+                                i, j, board[i, j], new SlotInfo() { type = type, owner = owner, hasBread = hasBread }));
                             return false;
                         }
                     }
@@ -469,7 +471,7 @@ namespace BakeryGirl.Chess {
             for (int i = 0; i < BoardInfo.Row; i++) {
                 output += "[";
                 for (int j = 0; j < BoardInfo.Col; j++) {
-                    output += (j == 0 ? "" : ", ") + string.Format("({0}, {1})", board[i, j].Key, board[i, j].Value);
+                    output += (j == 0 ? "" : ", ") + board[i, j];
                 }
                 output += "]\n";
             }

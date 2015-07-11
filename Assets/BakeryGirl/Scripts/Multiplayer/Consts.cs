@@ -19,6 +19,9 @@ namespace BakeryGirl.Chess {
             public static string GetBoardSlotOwnerKey(int r, int c) {
                 return string.Format("bo{0},{1}", r, c);
             }
+            public static string GetBoardSlotBreadKey(int r, int c) {
+                return string.Format("bb{0},{1}", r, c);
+            }
         }
 
         public static class EventCode {
