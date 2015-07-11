@@ -47,9 +47,10 @@ namespace BakeryGirl.Chess {
             GUI.skin.button.stretchWidth = true;
             GUI.skin.button.fixedWidth = 0;
 
+            GUI.color = Color.black;
             GUILayout.Label("name: " + Client.PlayerName +" state: " + Client.State + " player turn: " + (Client.IsPlayerTurn ? "true" : "false"));
             if (Client.State == ExitGames.Client.Photon.LoadBalancing.ClientState.Joined) {
-                string interestingPropsAsString = Client.FormatRoomProps();
+                string interestingPropsAsString = Client.FormatRoomPropsInLobby();
                 GUILayout.Label("room: " + Client.CurrentRoom.Name + " props: " + interestingPropsAsString);
             }
         }
@@ -89,6 +90,9 @@ namespace BakeryGirl.Chess {
         }
         public override void OnMove(bool isAgent, PlayerAction[] actions)
         {
+            if (isAgent) {
+                Client.VerifyBoardFromProperties();
+            }
             if (!isAgent)
             {
                 Client.SendMove(actions);

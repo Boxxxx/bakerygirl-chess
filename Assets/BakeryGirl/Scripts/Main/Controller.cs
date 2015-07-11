@@ -142,7 +142,7 @@ public class Controller : MonoBehaviour
 {
     #region Enums
     public enum MoveState { Idle, Pick, Occupy };
-    public enum MainState { Ready, Move, Wait, Over, AgentThinking, AgentRunning };
+    public enum MainState { Uninitialized, Ready, Move, Wait, Over, AgentThinking, AgentRunning };
     public enum PhaseState { Player, Agent, Other};
     public enum GameMode { Normal, Agent, Stay};
     public enum EffectType { Unknown, Move, CollectBread, Killout, MoveIn};
@@ -163,7 +163,7 @@ public class Controller : MonoBehaviour
 
     private MoveState moveState;
     private Unit.OwnerEnum turn;
-    private MainState state;
+    private MainState state = MainState.Uninitialized;
     private int effectNum;
     private Board board;
     private Storage storage;
@@ -196,6 +196,11 @@ public class Controller : MonoBehaviour
                 return PhaseState.Agent;
             else
                 return PhaseState.Other;
+        }
+    }
+    public bool IsStart {
+        get {
+            return state != MainState.Uninitialized;
         }
     }
 
@@ -281,6 +286,7 @@ public class Controller : MonoBehaviour
         bread.Owner = owner;
         // set 
         bread.setSpriteId(Unit.GetSpriteIdByName("bread_static"));
+        GlobalInfo.Instance.board.ModifyPlayerInfo(Unit.TypeEnum.Bread, owner, 1);
         iTween.MoveTo(bread.gameObject, iTween.Hash("position", storage.GetCollectPoint(owner), "time", 1f, "oncomplete", "OnDisappearComplete", "oncompletetarget", bread.gameObject));
         StartEffect(EffectType.CollectBread);
     }

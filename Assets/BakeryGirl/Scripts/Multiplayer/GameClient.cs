@@ -22,7 +22,7 @@ namespace BakeryGirl.Chess {
             public int turnNum = 0;
         }
 
-        private readonly static string[] kRoomPropsInLobby = new string[] { Consts.PropNames.RoomPwd };
+        private readonly static string[] kRoomPropsInLobby = new string[] { Consts.PropNames.RoomPwd, Consts.PropNames.PlayerIdToMakeThisTurn, Consts.PropNames.TurnNum, Consts.PropNames.IsStart };
         private const byte kPlayersNum = 2;
         private const int kEmptyRoomTtl = 5000;
         private const int kPlayerTtl = int.MaxValue;
@@ -216,7 +216,7 @@ namespace BakeryGirl.Chess {
             Hashtable hashtable = new Hashtable();
             hashtable[Consts.PropNames.IsStart] = true;
             SavePlayersInProps(hashtable);
-            SaveGameToProperties(hashtable);
+            //SaveGameToProperties(hashtable);
             SaveBoardToProperties(hashtable);
             OpSetCustomPropertiesOfRoom(hashtable);
 
@@ -365,12 +365,6 @@ namespace BakeryGirl.Chess {
                 if (Info.playerIdToMakeThisTurn == 0) {
                     Info.playerIdToMakeThisTurn = this.CurrentRoom.MasterClientId;
                 }
-
-                if (!VerifyBoardFromProperties(CurrentRoom.CustomProperties)) {
-                    if (onError != null) {
-                        onError(Consts.ErrorCode.NotCompatible);
-                    }
-                }
             }
         }
 
@@ -391,20 +385,49 @@ namespace BakeryGirl.Chess {
         }
 
         private void SaveBoardToProperties(Hashtable hashtable) {
-            var board = GlobalInfo.Instance.board.GenerateBoardSummary();
+            if (GlobalInfo.Instance.controller == null || !GlobalInfo.Instance.controller.IsStart) {
+                return;
+            }
+            var board = GlobalInfo.Instance.board == null ? null : GlobalInfo.Instance.board.GenerateBoardSummary();
+            if (board == null) {
+                return;
+            }
 
             // only push my own resource num
             hashtable.Add(Consts.PropNames.GetPlayerResourceKey(LocalPlayer.ID), GlobalInfo.Instance.storage.GetResourceNum(MyTurn));
 
             for (int i = 0; i < BoardInfo.Row; i++) {
                 for (int j = 0; j < BoardInfo.Col; j++) {
-                    hashtable.Add(Consts.PropNames.GetBoardSlotKey(i, j), board[i, j]);
+                    hashtable.Add(Consts.PropNames.GetBoardSlotTypeKey(i, j), board[i, j].Key);
+                    hashtable.Add(Consts.PropNames.GetBoardSlotOwnerKey(i, j), board[i, j].Value);
                 }
+            }
+
+            Debug.Log("Sending out board info.");
+        }
+
+        public bool VerifyBoardFromProperties() {
+            if (!VerifyBoardFromProperties(CurrentRoom.CustomProperties)) {
+                if (onError != null) {
+                    onError(Consts.ErrorCode.NotCompatible);
+                }
+                Debug.Log("board info verified ERROR!");
+                return true;
+            }
+            else {
+                Debug.Log("board info verified OK!");
+                return false;
             }
         }
 
         private bool VerifyBoardFromProperties(Hashtable hashtable) {
-            var board = GlobalInfo.Instance.board.GenerateBoardSummary();
+            if (GlobalInfo.Instance.controller == null || !GlobalInfo.Instance.controller.IsStart) {
+                return true;
+            }
+            var board = GlobalInfo.Instance.board == null ? null : GlobalInfo.Instance.board.GenerateBoardSummary();
+            if (board == null) {
+                return true;
+            }
 
             // Verify opponent resourceNum (not need for my own)
             var resourceKey = Consts.PropNames.GetPlayerResourceKey(Opponent.ID);
@@ -418,10 +441,12 @@ namespace BakeryGirl.Chess {
             // Verify board slots
             for (int i = 0; i < BoardInfo.Row; i++) {
                 for (int j = 0; j < BoardInfo.Col; j++) {
-                    var slotKey = Consts.PropNames.GetBoardSlotKey(i, j);
-                    if (hashtable.ContainsKey(slotKey)) {
-                        SlotInfo info = (SlotInfo)hashtable[slotKey];
-                        if (info.Key != board[i, j].Key || info.Value != board[i, j].Value) {
+                    var slotTypeKey = Consts.PropNames.GetBoardSlotTypeKey(i, j);
+                    var slotOwnerKey = Consts.PropNames.GetBoardSlotOwnerKey(i, j);
+                    if (hashtable.ContainsKey(slotTypeKey) && hashtable.ContainsKey(slotOwnerKey)) {
+                        Unit.TypeEnum type = (Unit.TypeEnum)hashtable[slotTypeKey];
+                        Unit.OwnerEnum owner = (Unit.OwnerEnum)hashtable[slotOwnerKey];
+                        if (type != board[i, j].Key || owner != board[i, j].Value) {
                             return false;
                         }
                     }

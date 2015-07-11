@@ -68,9 +68,9 @@ namespace BakeryGirl.Chess {
                             background.gameObject.SetActive(true);
                             break;
                         case EntryState.GamePlay:
+                            background.gameObject.SetActive(false);
                             foreach (var obj in mainGameComponents) {
                                 obj.gameObject.SetActive(true);
-                                background.gameObject.SetActive(false);
                             }
                             break;
                     }

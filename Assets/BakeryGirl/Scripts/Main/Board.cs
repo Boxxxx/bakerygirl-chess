@@ -283,10 +283,19 @@ public class Board : MonoBehaviour
     /// Generate the summary info of board
     /// </summary>
     public SlotInfo[,] GenerateBoardSummary() {
+        if (boardUnit == null) {
+            return null;
+        }
+
         var boardSummary = new SlotInfo[BoardInfo.Row, BoardInfo.Col];
         for (int i = 0; i < BoardInfo.Row; i++) {
             for (int j = 0; j < BoardInfo.Col; j++) {
-                boardSummary[i, j] = new KeyValuePair<Unit.TypeEnum, Unit.OwnerEnum>(boardUnit[i, j].Type, boardUnit[i, j].Owner);
+                if (boardUnit[i, j] == null) {
+                    boardSummary[i, j] = new KeyValuePair<Unit.TypeEnum, Unit.OwnerEnum>(Unit.TypeEnum.Void, Unit.OwnerEnum.None);
+                }
+                else {
+                    boardSummary[i, j] = new KeyValuePair<Unit.TypeEnum, Unit.OwnerEnum>(boardUnit[i, j].Type, boardUnit[i, j].Owner);
+                }
             }
         }
         return boardSummary;

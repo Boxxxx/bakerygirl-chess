@@ -13,8 +13,11 @@ namespace BakeryGirl.Chess {
             public static string GetPlayerResourceKey(int id) {
                 return string.Format("res{0}", id);
             }
-            public static string GetBoardSlotKey(int r, int c) {
-                return string.Format("b{0},{1}", r, c);
+            public static string GetBoardSlotTypeKey(int r, int c) {
+                return string.Format("bt{0},{1}", r, c);
+            }
+            public static string GetBoardSlotOwnerKey(int r, int c) {
+                return string.Format("bo{0},{1}", r, c);
             }
         }
 
