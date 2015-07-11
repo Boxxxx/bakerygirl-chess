@@ -9,7 +9,7 @@ public class Unit : MonoBehaviour
 {
     #region Enums
     public enum TypeEnum { Bread, Scout, Pioneer, Boss, Bomb, Void, Tile };
-    public enum OwnerEnum { Black, White, None};
+    public enum OwnerEnum { Black, White, None };
     public enum MoveWay { Direct, Transition };
     #endregion
 

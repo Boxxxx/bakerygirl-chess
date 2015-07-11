@@ -113,7 +113,7 @@ public abstract class AIPlayer : PlayerAgent
     {
         get { return action; }
     }
-    public Unit.OwnerEnum MyTurn { get { return myTurn; } }
+    public override Unit.OwnerEnum MyTurn { get { return myTurn; } }
     public int Node
     {
         get { return nodeCount; }
@@ -139,7 +139,7 @@ public abstract class AIPlayer : PlayerAgent
         if (aiTask != null)
             aiTask.Interrupt();
     }
-    public override bool SwitchTurn(Unit.OwnerEnum nowTurn)
+    public override bool SwitchTurn(Unit.OwnerEnum nowTurn, bool initial)
     {
         return MyTurn == nowTurn;
     }
@@ -164,7 +164,7 @@ public abstract class AIPlayer : PlayerAgent
     {
         if (State == StateEnum.Thinking && !aiTask.IsAlive)
         {
-            Complete(UnpackAction());
+            TurnOver(UnpackAction());
         }
     }
     #endregion

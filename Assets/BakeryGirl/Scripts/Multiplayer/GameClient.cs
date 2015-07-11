@@ -2,16 +2,23 @@
 using ExitGames.Client.Photon.LoadBalancing;
 using UnityEngine;
 using System;
+using System.Collections.Generic;
 
 namespace BakeryGirl.Chess {
     using Random = UnityEngine.Random;
     using Hashtable = ExitGames.Client.Photon.Hashtable;
+    using SlotInfo = KeyValuePair<Unit.TypeEnum, Unit.OwnerEnum>;
+
+    public interface IPhotonNetworkMsg {
+        Dictionary<string, object> ToMsg();
+        object ParseFromMsg(Dictionary<string, object> args);
+    }
 
     public class GameClient : LoadBalancingClient {
         public class GameInfo {
+            // player info
             public string roomName = string.Empty;
             public int playerIdToMakeThisTurn = 0;
-            public int[] playerIds = { 0, 0 };
             public int turnNum = 0;
         }
 
@@ -26,6 +33,8 @@ namespace BakeryGirl.Chess {
         public Action onCreateRoom;
         public Action onCloseRoom;
         public Action onGameStart;
+        public Action<PlayerAction[]> onReceiveMove;
+        public Action<Consts.ErrorCode> onError;
 
         public int ActivePlayerCnt {
             get {
@@ -49,18 +58,28 @@ namespace BakeryGirl.Chess {
         }
         public Player CurrentPlayer {
             get {
-                return Info.playerIdToMakeThisTurn == null ? null : CurrentRoom.GetPlayer(Info.playerIdToMakeThisTurn);
+                return Info == null ? null : CurrentRoom.GetPlayer(Info.playerIdToMakeThisTurn);
             }
         }
         public Player NextPlayer {
             get {
-                return Info.playerIdToMakeThisTurn == null ? null : LocalPlayer.GetNextFor(Info.playerIdToMakeThisTurn);
+                return Info == null ? null : LocalPlayer.GetNextFor(Info.playerIdToMakeThisTurn);
             }
         }
 
-        public bool IsMyTurn {
-            get { return Info.playerIdToMakeThisTurn == LocalPlayer.ID; }
+        public bool IsPlayerTurn {
+            get { return Info == null ? false : Info.playerIdToMakeThisTurn == LocalPlayer.ID; }
         }
+        public bool IsOpponentTurn {
+            get { return Info == null ? false : Info.playerIdToMakeThisTurn != LocalPlayer.ID; }
+        }
+        public bool IsMaster {
+            get {
+                return LocalPlayer.ID == CurrentRoom.MasterClientId;
+            }
+        }
+        public Unit.OwnerEnum MyTurn { get { return IsMaster ? Unit.OwnerEnum.Black : Unit.OwnerEnum.White; } }
+        public Unit.OwnerEnum OpponentTurn { get { return IsMaster ? Unit.OwnerEnum.White : Unit.OwnerEnum.Black; } }
 
         public GameClient() {
             OnStateChangeAction += clientState => {
@@ -116,7 +135,7 @@ namespace BakeryGirl.Chess {
                     break;
                 case (byte)OperationCode.JoinRandomGame:
                     if (operationResponse.ReturnCode == ErrorCode.NoRandomMatchFound) {
-                        // no room found: we create one!
+                        // if there is no room, just create one.
                         if (onCreateRoom != null) {
                             onCreateRoom();
                         }
@@ -138,7 +157,7 @@ namespace BakeryGirl.Chess {
                         this.CurrentRoom.IsOpen = false;
                         this.CurrentRoom.IsVisible = false;
 
-                        if (LocalPlayer.ID == CurrentRoom.MasterClientId) {
+                        if (IsMaster) {
                             OnPlayerReady();
                         }
                     }
@@ -149,6 +168,26 @@ namespace BakeryGirl.Chess {
                         if (onCloseRoom != null) {
                             onCloseRoom();
                         }
+                    }
+                    break;
+                case Consts.EventCode.OnMove:
+                    Debug.Log("Receive move message, " + photonEvent.ToStringFull());
+
+                    int cnt = 0;
+                    var evData = (Hashtable)photonEvent.Parameters[ParameterCode.Data];
+                    var actions = new List<PlayerAction>();
+                    
+                    while (evData.ContainsKey(cnt))
+                    {
+                        var msg = (Dictionary<string, object>)evData[cnt++];
+                        var action = new PlayerAction();
+                        action.ParseFromMsg(msg);
+                        actions.Add(action);
+                    }
+
+                    if (onReceiveMove != null)
+                    {
+                        onReceiveMove(actions.ToArray());
                     }
                     break;
             }
@@ -178,6 +217,7 @@ namespace BakeryGirl.Chess {
             hashtable[Consts.PropNames.IsStart] = true;
             SavePlayersInProps(hashtable);
             SaveGameToProperties(hashtable);
+            SaveBoardToProperties(hashtable);
             OpSetCustomPropertiesOfRoom(hashtable);
 
             if (onGameStart != null) {
@@ -191,7 +231,7 @@ namespace BakeryGirl.Chess {
         #endregion
 
         #region Public Interfaces
-        public void Connect(string playerName, string region) {
+        public void ConnectWithNameAndRegion(string playerName, string region) {
             Clear();
 
             if (IsConnected) {
@@ -233,7 +273,7 @@ namespace BakeryGirl.Chess {
         }
 
         public void EndTurn() {
-            if (!IsMyTurn) {
+            if (!IsPlayerTurn) {
                 Debug.LogWarning("[Client] this is not you turn!");
                 return;
             }
@@ -242,11 +282,33 @@ namespace BakeryGirl.Chess {
             SaveGameToProperties();
         }
 
-        public string FormatRoomPropsInLobby() {
+        public void SendMove(PlayerAction[] actions)
+        {
+            if (IsPlayerTurn)
+            {
+                byte eventCode = 1; // make up event codes at will
+                Hashtable evData = new Hashtable(); // put your data into a key-value hashtable
+                for (int i = 0; i < actions.Length; i++)
+                {
+                    evData[i] = actions[i].ToMsg();
+                }
+                bool sendReliable = true; // send something reliable if it has to arrive everywhere
+                OpRaiseEvent(eventCode, evData, sendReliable, RaiseEventOptions.Default);
+
+                EndTurn();
+            }
+        }
+        #endregion
+
+        #region Utility
+        public string FormatRoomPropsInLobby()
+        {
             Hashtable customRoomProps = CurrentRoom.CustomProperties;
             string interestingProps = "";
-            foreach (string propName in kRoomPropsInLobby) {
-                if (customRoomProps.ContainsKey(propName)) {
+            foreach (string propName in kRoomPropsInLobby)
+            {
+                if (customRoomProps.ContainsKey(propName))
+                {
                     if (!string.IsNullOrEmpty(interestingProps)) interestingProps += " ";
                     interestingProps += propName + ":" + customRoomProps[propName];
                 }
@@ -254,24 +316,26 @@ namespace BakeryGirl.Chess {
             return interestingProps;
         }
 
-        public string FormatRoomProps() {
+        public string FormatRoomProps()
+        {
             Hashtable customRoomProps = CurrentRoom.CustomProperties;
             string interestingProps = "[";
             bool isFirst = true;
-            foreach (var prop in customRoomProps) {
-                if (isFirst) {
+            foreach (var prop in customRoomProps)
+            {
+                if (isFirst)
+                {
                     isFirst = false;
                 }
-                else {
+                else
+                {
                     interestingProps += ", ";
                 }
                 interestingProps += prop.Key + ":" + prop.Value;
             }
             return interestingProps + "]";
         }
-        #endregion
 
-        #region Utility
         private void LoadGameFromProperties(bool calledByEvent) {
             Hashtable roomProps = CurrentRoom.CustomProperties;
             Debug.Log(string.Format("Board Properties: {0}", SupportClass.DictionaryToString(roomProps)));
@@ -301,20 +365,69 @@ namespace BakeryGirl.Chess {
                 if (Info.playerIdToMakeThisTurn == 0) {
                     Info.playerIdToMakeThisTurn = this.CurrentRoom.MasterClientId;
                 }
+
+                if (!VerifyBoardFromProperties(CurrentRoom.CustomProperties)) {
+                    if (onError != null) {
+                        onError(Consts.ErrorCode.NotCompatible);
+                    }
+                }
             }
         }
 
-        private void SaveGameToProperties(Hashtable hashtable) {
+        
+        private void SaveGameToProperties() {
+            Hashtable hashtable = new Hashtable();
+            SaveGameToProperties(hashtable);
+            SaveBoardToProperties(hashtable);
+            OpSetCustomPropertiesOfRoom(hashtable);
+        }
+
+        private void SaveGameToProperties(Hashtable hashtable)
+        {
             Info.turnNum = Info.turnNum + 1;
 
             hashtable.Add(Consts.PropNames.PlayerIdToMakeThisTurn, Info.playerIdToMakeThisTurn);  // "pt" is for "player turn" and contains the ID/actorNumber of the player who's turn it is
             hashtable.Add(Consts.PropNames.TurnNum, Info.turnNum);
         }
 
-        private void SaveGameToProperties() {
-            Hashtable hashtable = new Hashtable();
-            SaveGameToProperties(hashtable);
-            OpSetCustomPropertiesOfRoom(hashtable);
+        private void SaveBoardToProperties(Hashtable hashtable) {
+            var board = GlobalInfo.Instance.board.GenerateBoardSummary();
+
+            // only push my own resource num
+            hashtable.Add(Consts.PropNames.GetPlayerResourceKey(LocalPlayer.ID), GlobalInfo.Instance.storage.GetResourceNum(MyTurn));
+
+            for (int i = 0; i < BoardInfo.Row; i++) {
+                for (int j = 0; j < BoardInfo.Col; j++) {
+                    hashtable.Add(Consts.PropNames.GetBoardSlotKey(i, j), board[i, j]);
+                }
+            }
+        }
+
+        private bool VerifyBoardFromProperties(Hashtable hashtable) {
+            var board = GlobalInfo.Instance.board.GenerateBoardSummary();
+
+            // Verify opponent resourceNum (not need for my own)
+            var resourceKey = Consts.PropNames.GetPlayerResourceKey(Opponent.ID);
+            if (hashtable.ContainsKey(resourceKey)) {
+                int resource = (int)hashtable[resourceKey];
+                if (resource != GlobalInfo.Instance.storage.GetResourceNum(OpponentTurn)) {
+                    return false;
+                }
+            }
+
+            // Verify board slots
+            for (int i = 0; i < BoardInfo.Row; i++) {
+                for (int j = 0; j < BoardInfo.Col; j++) {
+                    var slotKey = Consts.PropNames.GetBoardSlotKey(i, j);
+                    if (hashtable.ContainsKey(slotKey)) {
+                        SlotInfo info = (SlotInfo)hashtable[slotKey];
+                        if (info.Key != board[i, j].Key || info.Value != board[i, j].Value) {
+                            return false;
+                        }
+                    }
+                }
+            }
+            return true;
         }
 
         private void SavePlayersInProps(Hashtable hashtable) {

@@ -1,6 +1,6 @@
 using UnityEngine;
 using System;
-using System.Collections;
+using BakeryGirl.Chess;
 
 /// <summary>
 /// To maintain shopping card list of both players and do buy-card-action
@@ -102,6 +102,16 @@ public class Storage : MonoBehaviour
             return board0.transform.position + StorageInfo.collectPointOffset;
         else
             return board1.transform.position + StorageInfo.collectPointOffset;
+    }
+
+    /// <summary>
+    /// Get the resource num of both players.
+    /// </summary>
+    public int[] GetResourceNum() {
+        return resourceNum;
+    }
+    public int GetResourceNum(Unit.OwnerEnum owner) {
+        return resourceNum[(int)owner];
     }
     #endregion
 
@@ -207,7 +217,7 @@ public class Storage : MonoBehaviour
                         card.GetComponent<Unit>().Focus = true;
                         if (Input.GetMouseButtonUp(0))
                         {
-                            BuyCard(type, turn);
+                            GlobalInfo.Instance.controller.DoAction(PlayerAction.CreateBuy(type));
                         }
                     }
                     else

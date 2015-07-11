@@ -1,6 +1,7 @@
 using UnityEngine;
-using System.Collections;
 using System.Collections.Generic;
+
+using SlotInfo = System.Collections.Generic.KeyValuePair<Unit.TypeEnum, Unit.OwnerEnum>;
 
 /// <summary>
 /// Maintain Chessboard and game turn
@@ -277,6 +278,18 @@ public class Board : MonoBehaviour
     public int GetSpriteIdByName(string name)
     {
         return sprite.GetSpriteIdByName(name);
+    }
+    /// <summary>
+    /// Generate the summary info of board
+    /// </summary>
+    public SlotInfo[,] GenerateBoardSummary() {
+        var boardSummary = new SlotInfo[BoardInfo.Row, BoardInfo.Col];
+        for (int i = 0; i < BoardInfo.Row; i++) {
+            for (int j = 0; j < BoardInfo.Col; j++) {
+                boardSummary[i, j] = new KeyValuePair<Unit.TypeEnum, Unit.OwnerEnum>(boardUnit[i, j].Type, boardUnit[i, j].Owner);
+            }
+        }
+        return boardSummary;
     }
     #endregion
 

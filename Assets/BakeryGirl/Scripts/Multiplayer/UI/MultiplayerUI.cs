@@ -10,6 +10,8 @@ namespace BakeryGirl.Chess {
             None, MainEntry, Connecting, WaitingForOpponent, GamePlay
         };
 
+        public UISprite background;
+
         public UIPanel mainEntryPanel;
         public UIInput nicknameLabel;
         public UIInput roomPwdLabel;
@@ -53,18 +55,22 @@ namespace BakeryGirl.Chess {
                     }
                     switch (value) {
                         case EntryState.MainEntry:
-                            GameClientWrapper.ClientInstance.Disconnect();
+                            GameClientAgent.ClientInstance.Disconnect();
                             mainEntryPanel.gameObject.SetActive(true);
+                            background.gameObject.SetActive(true);
                             break;
                         case EntryState.Connecting:
                             connectingPanel.gameObject.SetActive(true);
+                            background.gameObject.SetActive(true);
                             break;
                         case EntryState.WaitingForOpponent:
                             waitingPanel.gameObject.SetActive(true);
+                            background.gameObject.SetActive(true);
                             break;
                         case EntryState.GamePlay:
                             foreach (var obj in mainGameComponents) {
                                 obj.gameObject.SetActive(true);
+                                background.gameObject.SetActive(false);
                             }
                             break;
                     }
@@ -92,22 +98,21 @@ namespace BakeryGirl.Chess {
 
         void Update() {
             if (_state == EntryState.Connecting) {
-                connectingLabel.text = GameClientWrapper.Instance.Client.State.ToString();
+                connectingLabel.text = GameClientAgent.Instance.Client.State.ToString();
             }
         }
 
         void OnGUI() {
-            //if (CurrentState == EntryState.GamePlay) {
-            //    if (GUI.Button(new Rect(300, 300, 100, 50), "NextTurn")) {
-            //        GameClientWrapper.ClientInstance.EndTurn();
-            //    }
+            //if (GUI.Button(new Rect(50, 300, 100, 50), "NextTurn"))
+            //{
+            //    Application.LoadLevel(Application.loadedLevel);
             //}
         }
 
         void RegisterButtonCBs() {
             randomMatchButton.clickedHandle += (data, index) => {
                 PlayerPrefs.SetString(kUserNamePlayerPref, Nickname);
-                GameClientWrapper.Instance.Connect(Nickname);
+                GameClientAgent.Instance.JoinGame(Nickname);
                 CurrentState = EntryState.Connecting;
             };
             exitWaitingButton.clickedHandle += (data, index) => {
@@ -119,12 +124,17 @@ namespace BakeryGirl.Chess {
         } 
 
         void RegisterClientCBs() {
-            GameClientWrapper.ClientInstance.onDisconnect += OnDisconnect;
-            GameClientWrapper.ClientInstance.onJoinLobby += OnJoinLobby;
-            GameClientWrapper.ClientInstance.onJoinRoom += OnJoinRoom;
-            GameClientWrapper.ClientInstance.onCreateRoom += OnCreateRoom;
-            GameClientWrapper.ClientInstance.onCloseRoom += OnCloseRoom;
-            GameClientWrapper.ClientInstance.onGameStart += OnGameStart;
+            GameClientAgent.ClientInstance.onDisconnect += OnDisconnect;
+            GameClientAgent.ClientInstance.onJoinLobby += OnJoinLobby;
+            GameClientAgent.ClientInstance.onJoinRoom += OnJoinRoom;
+            GameClientAgent.ClientInstance.onCreateRoom += OnCreateRoom;
+            GameClientAgent.ClientInstance.onCloseRoom += OnCloseRoom;
+            GameClientAgent.ClientInstance.onGameStart += OnGameStart;
+            GameClientAgent.ClientInstance.onError += OnError;
+        }
+
+        void ReloadLevel() {
+            Application.LoadLevel(Application.loadedLevel);
         }
         #endregion
 
@@ -136,7 +146,7 @@ namespace BakeryGirl.Chess {
                 return;
             }
             ErrorPanel.Show("Disonnected", () => {
-                CurrentState = EntryState.MainEntry;
+                ReloadLevel();
             });
         }
 
@@ -146,7 +156,7 @@ namespace BakeryGirl.Chess {
                 return;
             }
             OutputRoomList();
-            GameClientWrapper.ClientInstance.JoinRandomRoom(RoomPwd);
+            GameClientAgent.ClientInstance.JoinRandomRoom(RoomPwd);
         }
 
         void OnJoinRoom(Room room) {
@@ -155,12 +165,12 @@ namespace BakeryGirl.Chess {
         }
 
         void OnCreateRoom() {
-            GameClientWrapper.ClientInstance.CreateTurnbasedRoom(RoomPwd);
+            GameClientAgent.ClientInstance.CreateTurnbasedRoom(RoomPwd);
         }
 
         void OnCloseRoom() {
             ErrorPanel.Show("Player has left", () => {
-                CurrentState = EntryState.MainEntry;
+                ReloadLevel();
             });
         }
 
@@ -168,13 +178,24 @@ namespace BakeryGirl.Chess {
             Debug.Log("game start");
             CurrentState = EntryState.GamePlay;
         }
+
+        void OnError(Consts.ErrorCode err) {
+            switch (err) {
+                case Consts.ErrorCode.NotCompatible:
+                    Debug.Log("game data not compatible");
+                    ErrorPanel.Show("Not compatible", () => {
+                        ReloadLevel();
+                    });
+                    break;
+            }
+        }
         #endregion
 
         #region Debug
         void OutputRoomList() {
             string roomList = "";
             bool isFirst = true;
-            foreach (var roomInfo in GameClientWrapper.ClientInstance.RoomInfoList) {
+            foreach (var roomInfo in GameClientAgent.ClientInstance.RoomInfoList) {
                 if (isFirst) {
                     isFirst = false;
                 }

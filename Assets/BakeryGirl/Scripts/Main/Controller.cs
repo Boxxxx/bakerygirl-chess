@@ -171,6 +171,9 @@ public class Controller : MonoBehaviour
     private Ruler.GameResult result;
     private Unit lastMove;
 
+    private List<PlayerAction[]> _actionLogs = new List<PlayerAction[]>();
+    private List<PlayerAction> _actionsCurrentTurn = new List<PlayerAction>();
+
     public GameMode Mode { get { return gameMode; } }
     public Unit.OwnerEnum Turn {
         get {
@@ -198,7 +201,7 @@ public class Controller : MonoBehaviour
 
     public GameClient Client {
         get {
-            return GameClientWrapper.ClientInstance;
+            return GameClientAgent.ClientInstance;
         }
     }
     #endregion
@@ -209,8 +212,12 @@ public class Controller : MonoBehaviour
         NewGame(newMode == GameMode.Stay ? gameMode : newMode);
         StartGame();
     }
-    public void NextTurn()
+    public void NextTurn(bool myself = false)
     {
+        if (myself)
+        {
+            DoAction(PlayerAction.CreateComplete());
+        }
         if (state == MainState.Wait || state == MainState.AgentRunning)
         {
             Ruler.GameResult result = Ruler.CheckGame(board);
@@ -218,7 +225,7 @@ public class Controller : MonoBehaviour
             {
                 turn = Unit.Opposite(turn);
                 state = MainState.Move;
-                NewTurn();
+                NewTurn(false);
             }
             else
             {
@@ -309,6 +316,9 @@ public class Controller : MonoBehaviour
         resultSprite.gameObject.SetActive(false);
         turnOverButton.gameObject.SetActive(false);
 
+        _actionLogs.Clear();
+        _actionsCurrentTurn.Clear();
+
         if (gameMode == GameMode.Agent) {
             InitAgent();
         }
@@ -319,11 +329,11 @@ public class Controller : MonoBehaviour
     {
         state = MainState.Move;
     }
-    private void NewTurn()
+    private void NewTurn(bool initial)
     {
         storage.SwitchTurn(turn);
         if (gameMode == GameMode.Agent) {
-            AgentSwitchTurn();
+            AgentSwitchTurn(initial);
         }
         turnOverButton.gameObject.SetActive(false);
     }
@@ -367,7 +377,7 @@ public class Controller : MonoBehaviour
                 {
                     if(CheckMoveOffset(pos - hint.Source.Pos))
                     {
-                        if (Move(hint.Source, board.GetUnit(pos), pos))
+                        if (DoAction(PlayerAction.CreateMove(hint.Source.Pos, pos)))
                         {
                             state = MainState.Wait;
                         }
@@ -409,7 +419,20 @@ public class Controller : MonoBehaviour
     #endregion
 
     #region Actions
-    private bool Move(Unit src, Unit des, Position desPos)
+    private bool _DoOver()
+    {
+        var actions = _actionsCurrentTurn.ToArray();
+        _actionsCurrentTurn.Clear();
+
+        _actionLogs.Add(actions);
+        if (agent != null)
+        {
+            agent.OnMove(state == MainState.AgentRunning, actions);
+        }
+
+        return true;
+    }
+    private bool _DoMove(Unit src, Unit des, Position desPos)
     {
         if (des != null && src.Owner == des.Owner)
             return false;
@@ -438,7 +461,7 @@ public class Controller : MonoBehaviour
         }
         return true;
     }
-    private bool Buy(Unit.TypeEnum type)
+    private bool _DoBuy(Unit.TypeEnum type)
     {
         return GlobalInfo.Instance.storage.BuyCard(type, turn);
     }
@@ -449,9 +472,9 @@ public class Controller : MonoBehaviour
     {
         agent.Initialize();
     }
-    private void AgentSwitchTurn()
+    private void AgentSwitchTurn(bool initial)
     {
-        if(agent.SwitchTurn(turn))
+        if(agent.SwitchTurn(turn, initial))
         {
             state = MainState.AgentThinking;
             agent.Think(board);
@@ -462,13 +485,24 @@ public class Controller : MonoBehaviour
     private bool DoAgentAction()
     {
         PlayerAction action = agent.NextAction();
+        DoAction(action);
+        return action.type == PlayerAction.Type.Complete;
+    }
+    public bool DoAction(PlayerAction action) {
+        bool flag = false;
         if (action.type == PlayerAction.Type.Complete)
-            return true;
+            flag = true;
         else if (action.type == PlayerAction.Type.Move)
-            Move(board.GetUnit(action.move.src), board.GetUnit(action.move.tar), action.move.tar);
+            flag = _DoMove(board.GetUnit(action.move.src), board.GetUnit(action.move.tar), action.move.tar);
         else
-            Buy(action.buy.type);
-        return false;
+            flag = _DoBuy(action.buy.type);
+        if (flag) {
+            _actionsCurrentTurn.Add(action);
+            if (action.type == PlayerAction.Type.Complete) {
+                _DoOver();
+            }
+        }
+        return flag;
     }
     #endregion
 
@@ -487,7 +521,7 @@ public class Controller : MonoBehaviour
         NewGame(initGameMode);
         StartGame();
 
-        NewTurn();
+        NewTurn(true);
     }
 
     void Update()

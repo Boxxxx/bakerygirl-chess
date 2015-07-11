@@ -14,7 +14,7 @@ public class TurnOver : MonoBehaviour {
 
     void OnClick()
     {
-        GlobalInfo.Instance.controller.NextTurn();
+        GlobalInfo.Instance.controller.NextTurn(true);
     }
 
     void Update()
