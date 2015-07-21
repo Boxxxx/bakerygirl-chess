@@ -146,6 +146,7 @@ namespace BakeryGirl.Chess {
                 return;
             }
             ErrorPanel.Show("Disonnected", () => {
+                Debug.Log("disconnected, cause: " + disconnectCause);
                 ReloadLevel();
             });
         }

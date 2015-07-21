@@ -237,7 +237,8 @@ namespace BakeryGirl.Chess {
                 Disconnect();
             }
             PlayerName = playerName;
-            ConnectToRegionMaster(region);
+            Connect("120.24.99.31:5055", "Lite", "", "", new AuthenticationValues());
+            //ConnectToRegionMaster(region);
         }
 
         public void JoinRandomRoom(string pwd = "") {
