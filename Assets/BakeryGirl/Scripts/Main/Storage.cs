@@ -1,16 +1,19 @@
 using UnityEngine;
 using System;
+using System.Collections.Generic;
 using BakeryGirl.Chess;
+using FullInspector;
 
 /// <summary>
 /// To maintain shopping card list of both players and do buy-card-action
 /// </summary>
-public class Storage : MonoBehaviour
+public class Storage : BaseBehavior
 {
     #region Variables
     public GameObject unitPrefab;
     public GameObject board0;
     public GameObject board1;
+    public Dictionary<string, GameObject> cardGraphics;
     private Unit.OwnerEnum turn;
     private int[] resourceNum;
     private bool hasbuy;
@@ -104,6 +107,23 @@ public class Storage : MonoBehaviour
             return board1.transform.position + StorageInfo.collectPointOffset;
     }
 
+    public GameObject GetCardGraphics(Unit.TypeEnum type, Unit.OwnerEnum owner) {
+        string spriteName;
+        if (type == Unit.TypeEnum.Bread)
+            spriteName = "bread";
+        else if (type == Unit.TypeEnum.Void)
+            spriteName = "void";
+        else if (type == Unit.TypeEnum.Tile)
+            spriteName = "tile";
+        else
+            spriteName = type.ToString().ToLower() + ((int)owner).ToString();
+        return cardGraphics.ContainsKey(spriteName) ? cardGraphics[spriteName] : null;
+    }
+
+    public GameObject GetCardGraphicsByName(string name) {
+        return cardGraphics.ContainsKey(name) ? cardGraphics[name] : null;
+    }
+
     /// <summary>
     /// Get the resource num of both players.
     /// </summary>
@@ -184,7 +204,8 @@ public class Storage : MonoBehaviour
     #endregion
 
     #region Unity Callback Functions
-    void Awake() {
+    protected override void Awake() {
+        base.Awake();
         GlobalInfo.Instance.storage = this;
         resourceNum = new int[2] { 0, 0 };
     }

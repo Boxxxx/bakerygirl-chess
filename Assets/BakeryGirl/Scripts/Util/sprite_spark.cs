@@ -24,10 +24,10 @@ public class sprite_spark : MonoBehaviour {
 
     public enum WorkingType
     {
-        UISprite, tk2dSprite
+        UISprite, Sprite
     }
 
-    public WorkingType workType = WorkingType.tk2dSprite;
+    public WorkingType workType = WorkingType.Sprite;
 
     bool initialized = false;
     public Color initColor;
@@ -37,7 +37,7 @@ public class sprite_spark : MonoBehaviour {
         if (workType == WorkingType.UISprite)
             initColor = GetComponent<UISprite>().color;
         else
-            initColor = GetComponent<tk2dSprite>().color;
+            initColor = GetComponent<SpriteRenderer>().color;
         initialized = true;
     }
 
@@ -67,7 +67,7 @@ public class sprite_spark : MonoBehaviour {
         }
         else
         {
-            tk2dSprite sprite = GetComponent<tk2dSprite>();
+            SpriteRenderer sprite = GetComponent<SpriteRenderer>();
             if (isSparkAlpha)
                 sprite.color = new Color(sprite.color.r, sprite.color.g, sprite.color.b, nowAlpha);
             else

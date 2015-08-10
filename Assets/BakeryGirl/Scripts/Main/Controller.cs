@@ -30,7 +30,7 @@ public class DragEvent
         this.source = source;
         source.Sprite.color = new Color(source.Sprite.color.r, source.Sprite.color.g, source.Sprite.color.b, 0.1f);
 
-        unit.setSpriteId(Unit.GetSpriteId(source.Type, source.Owner));
+        unit.setSprite(Unit.GetCardGraphics(source.Type, source.Owner));
         unit.transform.position = point;
         this.unit.gameObject.SetActive(true);
     }
@@ -71,7 +71,7 @@ public class Hint
         ClearHints();
         this.owner = source.Owner;
         this.source = source;
-        source.Sprite.SetColor(0.5f);
+        source.SetAlpha(0.5f);
         source.Focus = true;
 
         foreach (Position offset in Controller.MoveOffsetList)
@@ -92,7 +92,7 @@ public class Hint
     public void ClearHints()
     {
         if (source != null) {
-            source.Sprite.SetColor(1);
+            source.SetAlpha(1);
             source.Focus = false;
         }
 
@@ -112,24 +112,26 @@ public class Hint
             return false;
         else if (board.GetUnitOwner(tile.Pos) == Unit.Opposite(owner))
         {
-            tile.Sprite.SetColor(1, 0, 0);
+            tile.SetColor(1, 0, 0);
         }
         else if (board.GetUnitType(tile.Pos) == Unit.TypeEnum.Bread)
         {
-            tile.Sprite.SetColor(0, 0, 1);
+            tile.SetColor(0, 0, 1);
         }
         else if (board.GetGridState(tile.Pos) == Board.GridState.Base0 || board.GetGridState(tile.Pos) == Board.GridState.Base1)
         {
-            tile.Sprite.SetColor(1, 0.785f, 0);
+            tile.SetColor(1, 0.785f, 0);
         }
         else
         {
-            tile.Sprite.SetColor(0, 1, 0);
+            tile.SetColor(0, 1, 0);
         }
-        tile.Sprite.SetColor(0.6f);
-        sprite_spark spark = tile.gameObject.AddComponent<sprite_spark>();
-        spark.speed = 0.5f;
-        spark.isSparkAlpha = false;
+        tile.SetAlpha(0.6f);
+        if (tile.Sprite != null) {
+            sprite_spark spark = tile.Sprite.gameObject.AddComponent<sprite_spark>();
+            spark.speed = 0.5f;
+            spark.isSparkAlpha = false;
+        }
         return true;
     }
 }
@@ -246,7 +248,9 @@ public class Controller : MonoBehaviour
     public void StartEffect(EffectType effect = EffectType.Unknown)
     {
         effectNum++;
-        turnOverButton.gameObject.SetActive(false);
+        if (turnOverButton != null) {
+            turnOverButton.gameObject.SetActive(false);
+        }
     }
 
     public void StopEffect(EffectType effect = EffectType.Unknown)
@@ -260,8 +264,11 @@ public class Controller : MonoBehaviour
                 lastMove.Focus = true;
             }
         }
-        if (state == MainState.Wait && effectNum == 0)
-            turnOverButton.gameObject.SetActive(true);
+        if (state == MainState.Wait && effectNum == 0) {
+            if (turnOverButton != null) {
+                turnOverButton.gameObject.SetActive(true);
+            }
+        }
     }
 
     public void ClearEffect()
@@ -286,7 +293,7 @@ public class Controller : MonoBehaviour
     {
         bread.Owner = owner;
         // set 
-        bread.setSpriteId(Unit.GetSpriteIdByName("bread_static"));
+        bread.setSprite(Unit.GetCardGraphicsByName("bread_static"));
         iTween.MoveTo(bread.gameObject, iTween.Hash("position", storage.GetCollectPoint(owner), "time", 1f, "oncomplete", "OnDisappearComplete", "oncompletetarget", bread.gameObject));
         StartEffect(EffectType.CollectBread);
     }
@@ -319,8 +326,12 @@ public class Controller : MonoBehaviour
         storage.NewGame();
         state = MainState.Ready;
         turn = Unit.OwnerEnum.Black;
-        resultSprite.gameObject.SetActive(false);
-        turnOverButton.gameObject.SetActive(false);
+        if (resultSprite != null) {
+            resultSprite.gameObject.SetActive(false);
+        }
+        if (turnOverButton != null) {
+            turnOverButton.gameObject.SetActive(false);
+        }
 
         _actionLogs.Clear();
         _actionsCurrentTurn.Clear();
@@ -328,8 +339,10 @@ public class Controller : MonoBehaviour
         if (gameMode == GameMode.Agent) {
             InitAgent();
         }
-        logger.Text = "";
-        logger.State = UILogger.StateEnum.Normal;
+        if (logger != null) {
+            logger.Text = "";
+            logger.State = UILogger.StateEnum.Normal;
+        }
     }
     private void StartGame()
     {
@@ -341,13 +354,17 @@ public class Controller : MonoBehaviour
         if (gameMode == GameMode.Agent) {
             AgentSwitchTurn(initial);
         }
-        turnOverButton.gameObject.SetActive(false);
+        if (turnOverButton != null) {
+            turnOverButton.gameObject.SetActive(false);
+        }
     }
     private void OnGameOver()
     {
         agent.OnGameOver(result);
-        resultSprite.gameObject.SetActive(true);
-        resultSprite.OnGameOver(result);
+        if (resultSprite != null) {
+            resultSprite.gameObject.SetActive(true);
+            resultSprite.OnGameOver(result);
+        }
     }
     private bool CheckMoveOffset(Position offset)
     {
@@ -485,8 +502,10 @@ public class Controller : MonoBehaviour
         {
             state = MainState.AgentThinking;
             agent.Think(board);
-            logger.Text = agent.waitingText;
-            logger.State = UILogger.StateEnum.Dot;
+            if (logger != null) {
+                logger.Text = agent.waitingText;
+                logger.State = UILogger.StateEnum.Dot;
+            }
         }
     }
     private bool DoAgentAction()
@@ -537,8 +556,10 @@ public class Controller : MonoBehaviour
         {
             if (gameMode == GameMode.Agent) {
                 if (agent.State == PlayerAgent.StateEnum.Complete) {
-                    logger.Text = string.Format("花费时间 : {0}ms", agent.GetCostTime());
-                    logger.State = UILogger.StateEnum.Normal;
+                    if (logger != null) {
+                        logger.Text = string.Format("花费时间 : {0}ms", agent.GetCostTime());
+                        logger.State = UILogger.StateEnum.Normal;
+                    }
                     state = MainState.AgentRunning;
                 }
             }

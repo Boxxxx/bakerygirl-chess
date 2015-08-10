@@ -36,16 +36,16 @@ public class BoardInfo
 {
 	public const int Row = 7;
 	public const int Col = 5;
-    public const float GridWidth = 103;
-    public const float GridHeight = 102;
-    public const float GridHalfWidth = 103 / 2.0f;
-    public const float GridHalfHeight = 102 / 2.0f;
-    public const float UnitSpriteWidth = 63;
-    public const float UnitSpriteHeight = 84;
-    public const float UnitSpriteHalfWidth = 63 / 2f;
-    public const float UnitSpriteHalfHeight = 84 / 2f;
+    public const float GridWidth = 0.745f;
+    public const float GridHeight = 0.745f;
+    public const float GridHalfWidth = GridWidth / 2.0f;
+    public const float GridHalfHeight = GridHeight / 2.0f;
+    public const float UnitSpriteWidth = 0.83f;
+    public const float UnitSpriteHeight = 1.01f;
+    public const float UnitSpriteHalfWidth = UnitSpriteWidth / 2f;
+    public const float UnitSpriteHalfHeight = UnitSpriteHeight / 2f;
 
-    public readonly static Vector2 GridZeroPosition = new Vector2(379 + UnitSpriteHalfWidth, 974 - (753 + UnitSpriteHalfHeight));
+    public readonly static Vector2 GridZeroPosition = new Vector2(-1.08f, -2.28f);
 	public readonly static Position[] Base = new Position[]{new Position(0, Col/2), new Position(Row-1, Col/2)};
 	public readonly static Position[] BreadList = new Position[]{new Position(0, 0), new Position(0, 4), new Position(2, 1), new Position(2, 3),
 										 new Position(3, 0), new Position(3, 2), new Position(3, 4),

@@ -17,16 +17,17 @@ public class Unit : MonoBehaviour
     private TypeEnum type;
     private OwnerEnum owner;
     private Position pos;
-    private tk2dAnimatedSprite sprite;
+    private SpriteRenderer sprite;
     private bool isFocus;
     private tk2dAnimatedSprite highlight;
+    private GameObject m_graphics;
     #endregion
 
     #region Properties
     public TypeEnum Type { get { return type; } }
     public OwnerEnum Owner { get { return owner; } set { owner = value; } }
     public Position Pos { get { return pos; } set { pos = value; } }
-    public tk2dAnimatedSprite Sprite { get { return sprite; } }
+    public SpriteRenderer Sprite { get { return sprite; } }
     public bool Focus { 
         get { return isFocus; }
         set
@@ -49,13 +50,13 @@ public class Unit : MonoBehaviour
     }
     public void Initialize(UnitInfo info)
     {
-        this.sprite = GetComponent<tk2dAnimatedSprite>();
+        this.sprite = null;
         this.type = info.type;
         this.owner = info.owner;
         this.pos = info.pos;
 
         setTransform(pos);
-        setSpriteId(GetSpriteId(type, owner));
+        setSprite(GetCardGraphics(type, owner));
 
         if (IsSoldier(type))
             transform.parent = GameObject.Find("soldier").transform;
@@ -85,16 +86,34 @@ public class Unit : MonoBehaviour
         Vector2 coor = PosToScreen(position);
         transform.position = new Vector3(coor.x, coor.y, 0);
     }
-    public void setSpriteId(int id)
+    public void setSprite(GameObject graphics)
     {
-        sprite.Stop();
-        sprite.clipId = id;
-        sprite.Start();
+        if (m_graphics != null) {
+            Destroy(m_graphics);
+            m_graphics = null;
+        }
+        if (graphics != null) {
+            m_graphics = Instantiate(graphics, transform.position, Quaternion.identity) as GameObject;
+            m_graphics.transform.parent = transform;
+            sprite = m_graphics.GetComponentInChildren<SpriteRenderer>();
+        }
     }
     public void setPosition(Position pos)
     {
         this.pos = pos;
         setTransform(pos);
+    }
+    public void SetAlpha(float alpha) {
+        if (sprite != null) {
+            var color = sprite.color;
+            color.a = alpha;
+            sprite.color = color;
+        }
+    }
+    public void SetColor(float r, float g, float b) {
+        if (sprite != null) {
+            sprite.color = new Color(r, g, b, sprite.color.a);
+        }
     }
     #endregion
 
@@ -108,31 +127,20 @@ public class Unit : MonoBehaviour
         return new Position((int)Mathf.Floor((position.y - BoardInfo.GridZeroPosition.y + BoardInfo.UnitSpriteHalfHeight) / BoardInfo.GridHeight),
                         (int)Mathf.Floor((position.x - BoardInfo.GridZeroPosition.x + BoardInfo.UnitSpriteHalfWidth) / BoardInfo.GridWidth));
     }
-    public static Unit.OwnerEnum Opposite(Unit.OwnerEnum owner)
+    public static OwnerEnum Opposite(OwnerEnum owner)
     {
-        if (owner == Unit.OwnerEnum.Black)
-            return Unit.OwnerEnum.White;
-        else if (owner == Unit.OwnerEnum.White)
-            return Unit.OwnerEnum.Black;
+        if (owner == OwnerEnum.Black)
+            return OwnerEnum.White;
+        else if (owner == OwnerEnum.White)
+            return OwnerEnum.Black;
         else
-            return Unit.OwnerEnum.None;
+            return OwnerEnum.None;
     }
-    public static int GetSpriteIdByName(string name)
-    {
-        return GlobalInfo.Instance.storage.unitPrefab.GetComponent<tk2dAnimatedSprite>().GetClipIdByName(name);
+    public static GameObject GetCardGraphics(TypeEnum type, OwnerEnum owner) {
+        return GlobalInfo.Instance.storage.GetCardGraphics(type, owner);
     }
-    public static int GetSpriteId(TypeEnum type, OwnerEnum owner)
-    {
-        string spriteName;
-        if (type == TypeEnum.Bread)
-            spriteName = "bread_bounce";
-        else if (type == TypeEnum.Void)
-            spriteName = "void";
-        else if (type == TypeEnum.Tile)
-            spriteName = "tile";
-        else
-            spriteName = type.ToString().ToLower() + ((int)owner).ToString();
-        return GlobalInfo.Instance.storage.unitPrefab.GetComponent<tk2dAnimatedSprite>().GetClipIdByName(spriteName);
+    public static GameObject GetCardGraphicsByName(string name) {
+        return GlobalInfo.Instance.storage.GetCardGraphicsByName(name);
     }
     public static bool IsSoldier(TypeEnum type)
     {
