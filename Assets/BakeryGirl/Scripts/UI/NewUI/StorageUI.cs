@@ -36,6 +36,17 @@ public class StorageUI : MonoBehaviour {
     }
 
     /// <summary>
+    /// Rollback all info about storage back to cache state.
+    /// </summary>
+    /// <param name="cache"></param>
+    public void RollbackGame(GameCache cache) {
+        UpdateResourceNum(
+            cache.descriptor.GetPlayerInfo(Unit.TypeEnum.Bread, Unit.OwnerEnum.Black),
+            cache.descriptor.GetPlayerInfo(Unit.TypeEnum.Bread, Unit.OwnerEnum.White));
+        SwitchTurn(cache.descriptor.Turn);
+    }
+
+    /// <summary>
     /// Update storage resource num, to buy cards
     /// </summary>
     /// <param name="white">white's resource num</param>

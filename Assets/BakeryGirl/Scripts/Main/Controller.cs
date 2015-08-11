@@ -136,6 +136,21 @@ public class Hint
     }
 }
 
+public class GameCache {
+    public GameDescriptor descriptor;
+    public Position lastMovePos;
+
+    public GameCache(Board board, Unit.OwnerEnum turn, Unit lastMove) {
+        descriptor = new GameDescriptor(board, turn);
+        if (lastMove == null) {
+            lastMovePos = new Position(-1, -1);
+        }
+        else {
+            lastMovePos = lastMove.Pos;
+        }
+    }
+}
+
 /// <summary>
 /// Controller
 /// To maintain the state of game & do all the action to controll game state
@@ -173,6 +188,9 @@ public class Controller : MonoBehaviour
     private Hint hint = new Hint();
     private Ruler.GameResult result;
     private Unit lastMoveUnit;
+
+    // Game Cache
+    private GameCache cache;
 
     private List<PlayerAction[]> _actionLogs = new List<PlayerAction[]>();
     private List<PlayerAction> _actionsCurrentTurn = new List<PlayerAction>();
@@ -247,6 +265,19 @@ public class Controller : MonoBehaviour
                 OnGameOver();   
             }
         }
+    }
+    public void RollbackGame() {
+        if (effectNum != 0) {
+            return;
+        }
+        hint.ClearHints();
+        board.RollbackGame(cache);
+        storage.RollbackGame(cache);
+        lastMoveUnit = board.GetUnit(cache.lastMovePos, false);
+        lastMoveHint.Focus(lastMoveUnit);
+        turn = cache.descriptor.Turn;
+        state = MainState.Move;
+        moveState = MoveState.Idle;
     }
     #endregion
 
@@ -360,6 +391,7 @@ public class Controller : MonoBehaviour
         if (gameMode == GameMode.Agent) {
             AgentSwitchTurn(initial);
         }
+        cache = new GameCache(board, turn, lastMoveUnit);
     }
     private void OnGameOver()
     {

@@ -367,4 +367,13 @@ public class GameDescriptor : ICloneable
         return true;
     }
     #endregion
+
+    #region Gets
+    public UnitInfo GetUnitInfo(int r, int c) {
+        return units[r, c];
+    }
+    public Board.GridState GetGridState(int r, int c) {
+        return grids[r, c];
+    }
+    #endregion
 }

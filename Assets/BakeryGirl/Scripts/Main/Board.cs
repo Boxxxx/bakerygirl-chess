@@ -25,17 +25,12 @@ public class Board : BaseBehavior
     public Dictionary<string, Card> cardGraphics;
 
     #region Variables
-    private tk2dSprite sprite;
-
     // board data
 	private GridState[,] boardState;
     private Unit[,] boardUnit;
     private Unit[,] boardBread;
     private int restBreadNum;
     private Dictionary<Unit.TypeEnum, int>[] playerInfo;
-    
-    // game info
-    private Unit.OwnerEnum turn;
     #endregion
 
     #region Properties
@@ -85,6 +80,32 @@ public class Board : BaseBehavior
             foreach (Unit unit in boardBread)
                 if (unit != null)   
                     GameObject.Destroy(unit.gameObject);
+    }
+    /// <summary>
+    /// Rollback the board to cached state.
+    /// </summary>
+    public void RollbackGame(GameCache cache) {
+        ClearGame();
+        boardUnit = new Unit[BoardInfo.Row, BoardInfo.Col];
+        boardBread = new Unit[BoardInfo.Row, BoardInfo.Col];
+        boardState = new GridState[BoardInfo.Row, BoardInfo.Col];
+        playerInfo = new Dictionary<Unit.TypeEnum, int>[2] { new Dictionary<Unit.TypeEnum, int>(), new Dictionary<Unit.TypeEnum, int>() };
+        restBreadNum = 0;
+
+        for (int i = 0; i < BoardInfo.Row; i++) {
+            for (int j = 0; j < BoardInfo.Col; j++) {
+                boardState[i, j] = cache.descriptor.GetGridState(i, j);
+                if (boardState[i, j] == GridState.Bread) {
+                    CreateUnit(new UnitInfo(new Position(i, j), Unit.TypeEnum.Bread));
+                }
+                var unitInfo = cache.descriptor.GetUnitInfo(i, j);
+                if (unitInfo.type >= Unit.TypeEnum.Scout && unitInfo.type <= Unit.TypeEnum.Bomb) {
+                    CreateUnit(unitInfo);
+                }
+            }
+        }
+        restBreadNum = cache.descriptor.RestResource;
+        SwitchTurn(cache.descriptor.Turn);
     }
 
     /// <summary>
@@ -280,7 +301,9 @@ public class Board : BaseBehavior
     /// <returns></returns>
     public Unit GetUnit(Position position, bool includeBread = true)
     {
-        if (boardUnit[position.R, position.C] != null)
+        if (position.R < 0)
+            return null;
+        else if (boardUnit[position.R, position.C] != null)
             return boardUnit[position.R, position.C];
         else if (includeBread)
             return boardBread[position.R, position.C];
@@ -308,15 +331,6 @@ public class Board : BaseBehavior
     public GridState GetGridState(Position position)
     {
         return boardState[position.R, position.C];
-    }
-    /// <summary>
-    /// Get sprite id by name
-    /// </summary>
-    /// <param name="name">the sprite name to ask</param>
-    /// <returns></returns>
-    public int GetSpriteIdByName(string name)
-    {
-        return sprite.GetSpriteIdByName(name);
     }
     /// <summary>
     /// Generate the summary info of board
@@ -375,8 +389,6 @@ public class Board : BaseBehavior
     void Awake() {
         GlobalInfo.Instance.mainCamera = GameObject.Find("MainCamera").GetComponent<Camera>();
         GlobalInfo.Instance.board = this;
-
-        sprite = GetComponent<tk2dSprite>();
 	}
 	
 	void Start () {
