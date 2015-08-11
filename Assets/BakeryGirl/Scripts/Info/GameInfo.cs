@@ -27,9 +27,10 @@ public class GlobalInfo {
 	}
 
     public Board board;
-    public Storage storage;
+    public StorageUI storage;
     public Camera mainCamera;
     public Controller controller;
+    public CharacterImageShowup characterImage;
 }
 
 public class BoardInfo
@@ -60,14 +61,12 @@ public class BoardInfo
 
 public class StorageInfo
 {
-    public static readonly Vector3 collectPointOffset = new Vector3(52, 132, 0);
-
-    public static readonly Vector3[] CardPosOffset = { new Vector3(-58, -101.5f, 0),
-                                                        new Vector3(50, -101.5f, 0),
-                                                        new Vector3(-58, 0.5f, 0),
-                                                        new Vector3(50, 0.5f, 0) };
-    public static readonly Unit.TypeEnum[] CardTypeList = { Unit.TypeEnum.Boss, Unit.TypeEnum.Bomb, Unit.TypeEnum.Pioneer, Unit.TypeEnum.Scout };
-    public static readonly int[] CardCost = { 2, 1, 1, 1 };
+    public static readonly Vector3[] CardPosOffset = { new Vector3(-0.58f, -1.015f, 0),
+                                                        new Vector3(0.50f, -1.015f, 0),
+                                                        new Vector3(-0.58f, 0.005f, 0),
+                                                        new Vector3(0.50f, 0.005f, 0) };
+    public static readonly Unit.TypeEnum[] CardTypeList = { Unit.TypeEnum.Scout, Unit.TypeEnum.Pioneer, Unit.TypeEnum.Bomb, Unit.TypeEnum.Boss };
+    public static readonly int[] CardCost = { 1, 1, 1, 2 };
 }
 
 public class UnitInfo : ICloneable  
@@ -76,7 +75,7 @@ public class UnitInfo : ICloneable
     public Unit.TypeEnum type = Unit.TypeEnum.Void;
     public Unit.OwnerEnum owner = Unit.OwnerEnum.None;
 
-    public static readonly Vector3 KilledEffectOffset = new Vector3(-50, 50, 0);
+    public static readonly Vector3 KilledEffectOffset = new Vector3(-0.50f, 0.50f, 0);
 
     public UnitInfo() { }
     public UnitInfo(Position pos, Unit.TypeEnum type, Unit.OwnerEnum owner = Unit.OwnerEnum.None)

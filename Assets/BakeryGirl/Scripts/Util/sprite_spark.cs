@@ -1,4 +1,5 @@
 using UnityEngine;
+using UnityEngine.UI;
 using System.Collections;
 
 /// <summary>
@@ -35,7 +36,7 @@ public class sprite_spark : MonoBehaviour {
     public void ResetInitColor()
     {
         if (workType == WorkingType.UISprite)
-            initColor = GetComponent<UISprite>().color;
+            initColor = GetComponent<Image>().color;
         else
             initColor = GetComponent<SpriteRenderer>().color;
         initialized = true;
@@ -59,11 +60,17 @@ public class sprite_spark : MonoBehaviour {
     {
         if (workType == WorkingType.UISprite)
         {
-            UISprite sprite = GetComponent<UISprite>();
-            if (isSparkAlpha)
-                sprite.color = new Color(sprite.color.r, sprite.color.g, sprite.color.b, nowAlpha);
-            else
-                sprite.color = new Color(initColor.r * nowAlpha, initColor.g * nowAlpha, initColor.b * nowAlpha, initColor.a);
+            Button button = GetComponent<Button>();
+            Image sprite = GetComponent<Image>();
+            if (!button.interactable) {
+                sprite.color = new Color(sprite.color.r, sprite.color.g, sprite.color.b, 1.0f);
+            }
+            else {
+                if (isSparkAlpha)
+                    sprite.color = new Color(sprite.color.r, sprite.color.g, sprite.color.b, nowAlpha);
+                else
+                    sprite.color = new Color(initColor.r * nowAlpha, initColor.g * nowAlpha, initColor.b * nowAlpha, initColor.a);
+            }
         }
         else
         {

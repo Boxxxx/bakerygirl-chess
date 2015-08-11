@@ -14,13 +14,17 @@ public class Unit : MonoBehaviour
     #endregion
 
     #region Variables
+    private static readonly Vector3 kMinimumOffset = new Vector3(-0.2f, -0.18f, 0);
+    private static readonly Vector3 kMinimumScale = new Vector3(0.5f, 0.5f, 1.0f);
+    private const float kMiminumTime = 0.25f;
+
     private TypeEnum type;
     private OwnerEnum owner;
     private Position pos;
     private SpriteRenderer sprite;
     private bool isFocus;
-    private tk2dAnimatedSprite highlight;
-    private GameObject m_graphics;
+    private bool isMinimum;
+    private Card m_card;
     #endregion
 
     #region Properties
@@ -33,10 +37,34 @@ public class Unit : MonoBehaviour
         set
         {
             isFocus = value;
-            if (isFocus == false)
-                highlight.gameObject.SetActive(false);
-            else
-                highlight.gameObject.SetActive(true);
+            if (m_card != null) {
+                m_card.IsSelected = value;
+            }
+        }
+    }
+    public bool CardActive {
+        set {
+            if (m_card != null) {
+                m_card.IsActive = value;
+            }
+        }
+    }
+    public bool Minimum {
+        get { return isMinimum; }
+        set {
+            if (isMinimum != value) {
+                isMinimum = value;
+                if (m_card != null) {
+                    if (isMinimum) {
+                        iTween.MoveTo(m_card.gameObject, iTween.Hash("position", kMinimumOffset, "time", kMiminumTime, "islocal", true));
+                        iTween.ScaleTo(m_card.gameObject, iTween.Hash("scale", kMinimumScale, "time", kMiminumTime, "islocal", true));
+                    }
+                    else {
+                        iTween.MoveTo(m_card.gameObject, iTween.Hash("position", Vector3.zero, "time", kMiminumTime, "islocal", true));
+                        iTween.ScaleTo(m_card.gameObject, iTween.Hash("scale", new Vector3(1, 1, 1), "time", kMiminumTime, "islocal", true));
+                    }
+                }
+            }
         }
     }
     #endregion
@@ -56,7 +84,7 @@ public class Unit : MonoBehaviour
         this.pos = info.pos;
 
         setTransform(pos);
-        setSprite(GetCardGraphics(type, owner));
+        setSprite(GlobalInfo.Instance.board.GetCardGraphics(type, owner));
 
         if (IsSoldier(type))
             transform.parent = GameObject.Find("soldier").transform;
@@ -70,13 +98,21 @@ public class Unit : MonoBehaviour
 
     #region Unity Callback Function
     void Awake() {
-        highlight = gameObject.transform.Find("highlight").GetComponent<tk2dAnimatedSprite>();
     }
 
 	void Start () {
 	}
 	
 	void Update () {
+        if (type == TypeEnum.Bread) {
+            var unit = GlobalInfo.Instance.board.GetUnit(pos, false);
+            if (unit != null && unit.type != TypeEnum.Scout) {
+                Minimum = true;
+            }
+            else {
+                Minimum = false;
+            }
+        }
 	}
     #endregion
 
@@ -86,22 +122,29 @@ public class Unit : MonoBehaviour
         Vector2 coor = PosToScreen(position);
         transform.position = new Vector3(coor.x, coor.y, 0);
     }
-    public void setSprite(GameObject graphics)
+    public void setSprite(Card graphics)
     {
-        if (m_graphics != null) {
-            Destroy(m_graphics);
-            m_graphics = null;
+        if (m_card != null) {
+            Destroy(m_card.gameObject);
+            m_card = null;
         }
         if (graphics != null) {
-            m_graphics = Instantiate(graphics, transform.position, Quaternion.identity) as GameObject;
-            m_graphics.transform.parent = transform;
-            sprite = m_graphics.GetComponentInChildren<SpriteRenderer>();
+            m_card = (Instantiate(graphics.gameObject, transform.position, Quaternion.identity) as GameObject).GetComponent<Card>();
+            m_card.transform.parent = transform;
+            m_card.spriteRenderer.sortingOrder = -pos.R;
+            sprite = m_card.GetComponentInChildren<SpriteRenderer>();
         }
+    }
+    public void setSprite(string name) {
+        setSprite(GlobalInfo.Instance.board.GetCardGraphicsByName(name));
     }
     public void setPosition(Position pos)
     {
         this.pos = pos;
         setTransform(pos);
+        if (m_card != null) {
+            m_card.spriteRenderer.sortingOrder = -pos.R;
+        }
     }
     public void SetAlpha(float alpha) {
         if (sprite != null) {
@@ -115,6 +158,9 @@ public class Unit : MonoBehaviour
             sprite.color = new Color(r, g, b, sprite.color.a);
         }
     }
+    public string GetCardName() {
+        return Board.GetCardName(type, owner);
+    }
     #endregion
 
     #region Public Static Utility Functions
@@ -124,8 +170,8 @@ public class Unit : MonoBehaviour
     }
     public static Position ScreenToPos(Vector2 position)
     {
-        return new Position((int)Mathf.Floor((position.y - BoardInfo.GridZeroPosition.y + BoardInfo.UnitSpriteHalfHeight) / BoardInfo.GridHeight),
-                        (int)Mathf.Floor((position.x - BoardInfo.GridZeroPosition.x + BoardInfo.UnitSpriteHalfWidth) / BoardInfo.GridWidth));
+        return new Position((int)Mathf.Floor((position.y - BoardInfo.GridZeroPosition.y + BoardInfo.GridHalfWidth) / BoardInfo.GridHeight),
+                        (int)Mathf.Floor((position.x - BoardInfo.GridZeroPosition.x + BoardInfo.GridHalfHeight) / BoardInfo.GridWidth));
     }
     public static OwnerEnum Opposite(OwnerEnum owner)
     {
@@ -135,12 +181,6 @@ public class Unit : MonoBehaviour
             return OwnerEnum.Black;
         else
             return OwnerEnum.None;
-    }
-    public static GameObject GetCardGraphics(TypeEnum type, OwnerEnum owner) {
-        return GlobalInfo.Instance.storage.GetCardGraphics(type, owner);
-    }
-    public static GameObject GetCardGraphicsByName(string name) {
-        return GlobalInfo.Instance.storage.GetCardGraphicsByName(name);
     }
     public static bool IsSoldier(TypeEnum type)
     {

@@ -1,4 +1,5 @@
 ﻿using UnityEngine;
+using UnityEngine.UI;
 using System;
 using System.Collections;
 using System.Collections.Generic;
@@ -30,7 +31,7 @@ public class DragEvent
         this.source = source;
         source.Sprite.color = new Color(source.Sprite.color.r, source.Sprite.color.g, source.Sprite.color.b, 0.1f);
 
-        unit.setSprite(Unit.GetCardGraphics(source.Type, source.Owner));
+        unit.setSprite(GlobalInfo.Instance.board.GetCardGraphics(source.Type, source.Owner));
         unit.transform.position = point;
         this.unit.gameObject.SetActive(true);
     }
@@ -54,6 +55,7 @@ public class DragEvent
 /// </summary>
 public class Hint
 {
+    public static readonly float[] MoveHintRotationList = { 180, -90, 90, 0 };
     public enum HintType { Move, None };
 
     private bool isShow;
@@ -71,16 +73,16 @@ public class Hint
         ClearHints();
         this.owner = source.Owner;
         this.source = source;
-        source.SetAlpha(0.5f);
         source.Focus = true;
 
-        foreach (Position offset in Controller.MoveOffsetList)
+        for (int i = 0; i < 4; i++)
         {
+            var offset = Controller.MoveOffsetList[i];
             Position newPos = source.Pos+offset;
             if (newPos.IsValid && GlobalInfo.Instance.board.GetUnitOwner(newPos) != owner)
             {
-                Unit unit = GlobalInfo.Instance.storage.CreateUnit(new UnitInfo(source.Pos + offset, Unit.TypeEnum.Tile));
-                SetHintStyle(unit);
+                Unit unit = GlobalInfo.Instance.board.InstantiateUnit(new UnitInfo(source.Pos + offset, Unit.TypeEnum.Tile));
+                SetHintStyle(unit, MoveHintRotationList[i]);
                 units.Add(unit);
             }
         }
@@ -92,7 +94,6 @@ public class Hint
     public void ClearHints()
     {
         if (source != null) {
-            source.SetAlpha(1);
             source.Focus = false;
         }
 
@@ -105,32 +106,31 @@ public class Hint
         type = HintType.None;
     }
 
-    private bool SetHintStyle(Unit tile)
+    private bool SetHintStyle(Unit tile, float rotation)
     {
         Board board = GlobalInfo.Instance.board;
-        if (board.GetUnitOwner(tile.Pos) == owner)
+        if (board.GetUnitOwner(tile.Pos) == owner) {
             return false;
-        else if (board.GetUnitOwner(tile.Pos) == Unit.Opposite(owner))
-        {
+        }
+        else if (board.GetUnitOwner(tile.Pos) == Unit.Opposite(owner)) {
             tile.SetColor(1, 0, 0);
+            tile.CardActive = true;
+            tile.setSprite("attack_hint");
         }
-        else if (board.GetUnitType(tile.Pos) == Unit.TypeEnum.Bread)
-        {
-            tile.SetColor(0, 0, 1);
-        }
-        else if (board.GetGridState(tile.Pos) == Board.GridState.Base0 || board.GetGridState(tile.Pos) == Board.GridState.Base1)
-        {
-            tile.SetColor(1, 0.785f, 0);
-        }
-        else
-        {
-            tile.SetColor(0, 1, 0);
-        }
-        tile.SetAlpha(0.6f);
-        if (tile.Sprite != null) {
-            sprite_spark spark = tile.Sprite.gameObject.AddComponent<sprite_spark>();
-            spark.speed = 0.5f;
-            spark.isSparkAlpha = false;
+        else {
+            if (board.GetUnitType(tile.Pos) == Unit.TypeEnum.Bread) {
+                tile.SetColor(0, 0, 1);
+                
+            }
+            else if (board.GetGridState(tile.Pos) == Board.GridState.Base0 || board.GetGridState(tile.Pos) == Board.GridState.Base1) {
+                tile.SetColor(1, 0.785f, 0);
+            }
+            else {
+                tile.SetColor(0, 1, 0);
+            }
+            tile.CardActive = true;
+            tile.setSprite("move_hint");
+            tile.transform.Rotate(new Vector3(0, 0, rotation));
         }
         return true;
     }
@@ -156,11 +156,12 @@ public class Controller : MonoBehaviour
 
     #region Variables
     public GameMode initGameMode = GameMode.Normal;
-    public UIButton turnOverButton;
+    public Button turnOverButton;
     public ResultSprite resultSprite;
     public UILogger logger;
     private GameMode gameMode = GameMode.Normal;
     public PlayerAgent agent;
+    public LastMoveHint lastMoveHint;
     //public string aiClassName = "";
 
     private MoveState moveState;
@@ -168,10 +169,10 @@ public class Controller : MonoBehaviour
     private MainState state = MainState.Uninitialized;
     private int effectNum;
     private Board board;
-    private Storage storage;
+    private StorageUI storage;
     private Hint hint = new Hint();
     private Ruler.GameResult result;
-    private Unit lastMove;
+    private Unit lastMoveUnit;
 
     private List<PlayerAction[]> _actionLogs = new List<PlayerAction[]>();
     private List<PlayerAction> _actionsCurrentTurn = new List<PlayerAction>();
@@ -203,6 +204,11 @@ public class Controller : MonoBehaviour
     public bool IsStart {
         get {
             return state != MainState.Uninitialized;
+        }
+    }
+    public bool IsMoving {
+        get {
+            return moveState == MoveState.Pick;
         }
     }
 
@@ -248,9 +254,7 @@ public class Controller : MonoBehaviour
     public void StartEffect(EffectType effect = EffectType.Unknown)
     {
         effectNum++;
-        if (turnOverButton != null) {
-            turnOverButton.gameObject.SetActive(false);
-        }
+        storage.IsEndTurnValid = false;
     }
 
     public void StopEffect(EffectType effect = EffectType.Unknown)
@@ -259,15 +263,14 @@ public class Controller : MonoBehaviour
 
         if (effect == EffectType.Move)
         {
-            if (lastMove != null)
+            if (lastMoveUnit != null)
             {
-                lastMove.Focus = true;
+                lastMoveHint.Focus(lastMoveUnit);
+                //lastMove.Focus = true;
             }
         }
         if (state == MainState.Wait && effectNum == 0) {
-            if (turnOverButton != null) {
-                turnOverButton.gameObject.SetActive(true);
-            }
+            storage.IsEndTurnValid = true;
         }
     }
 
@@ -284,17 +287,20 @@ public class Controller : MonoBehaviour
         iTween.MoveTo(src.gameObject, iTween.Hash("position", new Vector3(targetPos.x, targetPos.y, 0), "time", 0.2f, "oncomplete", "OnMoveComplete", "oncompletetarget", src.gameObject));
         StartEffect(EffectType.Move);
 
-        if (lastMove != null)
-            lastMove.Focus = false;
-        lastMove = src;
+        if (lastMoveUnit != null) {
+            lastMoveHint.UnFocus();
+        }
+        lastMoveUnit = src;
     }
 
     private void CollectBreadEffect(Unit bread, Unit.OwnerEnum owner)
     {
         bread.Owner = owner;
         // set 
-        bread.setSprite(Unit.GetCardGraphicsByName("bread_static"));
-        iTween.MoveTo(bread.gameObject, iTween.Hash("position", storage.GetCollectPoint(owner), "time", 1f, "oncomplete", "OnDisappearComplete", "oncompletetarget", bread.gameObject));
+        bread.setSprite(GlobalInfo.Instance.board.GetCardGraphicsByName("bread"));
+        iTween.MoveAdd(bread.gameObject, iTween.Hash("amount", new Vector3(0, BoardInfo.GridHeight, 0), "time", 0.5f, "easetype", iTween.EaseType.easeOutCubic,"oncomplete", (iTween.CallbackDelegate)(tween => {
+            iTween.MoveTo(bread.gameObject, iTween.Hash("position", storage.GetCollectPoint(owner), "time", 1f, "oncomplete", "OnDisappearComplete", "oncompletetarget", bread.gameObject));
+        })));
         StartEffect(EffectType.CollectBread);
     }
 
@@ -308,7 +314,8 @@ public class Controller : MonoBehaviour
     public void BuyCardEffect(Unit card, Unit.OwnerEnum owner)
     {
         Vector3 position = Unit.PosToScreen(BoardInfo.Base[(int)owner]);
-        iTween.MoveTo(card.gameObject, iTween.Hash("position", position, "time", 1f, "oncomplete", "OnAppearComplete", "oncompletetarget", card.gameObject));
+        iTween.FadeFrom(card.gameObject, 0, 1.0f);
+        iTween.MoveTo(card.gameObject, iTween.Hash("position", position, "time", 1.5f, "oncomplete", "OnAppearComplete", "oncompletetarget", card.gameObject));
         StartEffect(EffectType.MoveIn);
     }
     #endregion
@@ -318,7 +325,7 @@ public class Controller : MonoBehaviour
     {
         this.gameMode = gameMode;
 
-        lastMove = null;
+        lastMoveUnit = null;
         moveState = MoveState.Idle;
         ClearEffect();
         hint.ClearHints();
@@ -329,9 +336,7 @@ public class Controller : MonoBehaviour
         if (resultSprite != null) {
             resultSprite.gameObject.SetActive(false);
         }
-        if (turnOverButton != null) {
-            turnOverButton.gameObject.SetActive(false);
-        }
+        storage.IsEndTurnValid = false;
 
         _actionLogs.Clear();
         _actionsCurrentTurn.Clear();
@@ -350,12 +355,10 @@ public class Controller : MonoBehaviour
     }
     private void NewTurn(bool initial)
     {
+        board.SwitchTurn(turn);
         storage.SwitchTurn(turn);
         if (gameMode == GameMode.Agent) {
             AgentSwitchTurn(initial);
-        }
-        if (turnOverButton != null) {
-            turnOverButton.gameObject.SetActive(false);
         }
     }
     private void OnGameOver()
@@ -375,46 +378,42 @@ public class Controller : MonoBehaviour
     }
     private void MouseEvent(Vector3 point)
     {
-        if (moveState == MoveState.Idle)
-        {
-            if (Input.GetMouseButtonUp(0))
-            {
-                Position pos = Unit.ScreenToPos(new Vector2(point.x, point.y));
+        Position pos = Unit.ScreenToPos(new Vector2(point.x, point.y));
 
-                if (pos.IsValid)
-                {
-                    if (board.GetUnitOwner(pos) == Turn)
-                    {
+        if (state == MainState.Move) {
+            if (moveState == MoveState.Idle) {
+                if (pos.IsValid && Input.GetMouseButtonUp(0)) {
+                    if (board.GetUnitOwner(pos) == Turn) {
                         moveState = MoveState.Pick;
 
                         hint.SetMoveHint(board.GetUnit(pos));
                     }
                 }
             }
-        }
-        else if (moveState == MoveState.Pick)
-        {
-            if (Input.GetMouseButtonUp(0))
-            {
-                Position pos = Unit.ScreenToPos(new Vector2(point.x, point.y));
-                if (pos.IsValid)
-                {
-                    if(CheckMoveOffset(pos - hint.Source.Pos))
-                    {
-                        if (DoAction(PlayerAction.CreateMove(hint.Source.Pos, pos)))
-                        {
-                            state = MainState.Wait;
+            else if (moveState == MoveState.Pick) {
+                if (Input.GetMouseButtonUp(0)) {
+                    if (pos.IsValid) {
+                        if (CheckMoveOffset(pos - hint.Source.Pos)) {
+                            if (DoAction(PlayerAction.CreateMove(hint.Source.Pos, pos))) {
+                                state = MainState.Wait;
+                            }
                         }
-                    }
 
+                        hint.ClearHints();
+                        moveState = MoveState.Idle;
+                    }
+                }
+                else if (Input.GetMouseButtonUp(1)) {
                     hint.ClearHints();
                     moveState = MoveState.Idle;
                 }
             }
-            else if (Input.GetMouseButtonUp(1))
-            {
-                hint.ClearHints();
-                moveState = MoveState.Idle;
+        }
+
+        if (!IsMoving && pos.IsValid) {
+            var unit = board.GetUnit(pos, false);
+            if (unit != null) {
+                GlobalInfo.Instance.characterImage.Show(unit.GetCardName());
             }
         }
     }
@@ -581,9 +580,8 @@ public class Controller : MonoBehaviour
             if (board.collider.Raycast(GlobalInfo.Instance.mainCamera.ScreenPointToRay(Input.mousePosition), out hit, 1000f))
             {
                 Vector3 point = hit.point;
-
-                if (state == MainState.Move)
-                    MouseEvent(point);
+                
+                MouseEvent(point);
             }
         }
     }

@@ -34,6 +34,7 @@ THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND 
 #region Namespaces
 using System;
 using System.Collections;
+using System.Collections.Generic;
 using System.Reflection;
 using UnityEngine;
 #endregion
@@ -47,6 +48,10 @@ public class iTween : MonoBehaviour{
 	
 	#region Variables
 	
+    //callback delegate
+    public delegate void CallbackDelegate(iTween tween);
+    public delegate void ValueCallbackDelegate(object obj);
+
 	//repository of all living iTweens:
 	public static ArrayList tweens = new ArrayList();
 	
@@ -69,7 +74,7 @@ public class iTween : MonoBehaviour{
 	private bool kinematic, isLocal, loop, reverse, wasPaused, physics;
 	private Hashtable tweenArguments;
 	private Space space;
-	private delegate float EasingFunction(float start, float end, float value);
+	public delegate float EasingFunction(float start, float end, float value);
 	private delegate void ApplyTween();
 	private EasingFunction ease;
 	private ApplyTween apply;
@@ -103,6 +108,7 @@ public class iTween : MonoBehaviour{
 		easeInQuint,
 		easeOutQuint,
 		easeInOutQuint,
+        easeOutInQuint,
 		easeInSine,
 		easeOutSine,
 		easeInOutSine,
@@ -451,6 +457,24 @@ public class iTween : MonoBehaviour{
 			Launch(target,args);
 		}
 	}
+
+    /// <summary>
+    /// Delay
+    /// </summary>
+    /// <param name="target"></param>
+    /// <param name="args"></param>
+    public static void Delay(GameObject target, Hashtable args)
+    {
+        var table = iTween.Hash("from", 0, "to", 1, "time", Convert.ToSingle(args["time"]));
+        if (args.ContainsKey("onupdate"))
+            table["onupdate"] = (iTween.ValueCallbackDelegate)args["onupdate"];
+        else
+            table["onupdate"] = (iTween.ValueCallbackDelegate)((_) => { });
+        if (args.ContainsKey("oncomplete"))
+            table["oncomplete"] = (iTween.CallbackDelegate)args["oncomplete"];
+
+        ValueTo(target, table);
+    }
 	
 	/// <summary>
 	/// Changes a GameObject's alpha value instantly then returns it to the provided alpha over time with MINIMUM customization options.  If a GUIText or GUITexture component is attached, it will become the target of the animation. Identical to using ColorFrom and using the "a" parameter. 
@@ -699,11 +723,32 @@ public class iTween : MonoBehaviour{
 			tempColor=fromColor=target.guiTexture.color;	
 		}else if(target.GetComponent(typeof(GUIText))){
 			tempColor=fromColor=target.guiText.material.color;
-		}else if(target.renderer){
-			tempColor=fromColor=target.renderer.material.color;
-		}else if(target.light){
-			tempColor=fromColor=target.light.color;
-		}
+        }
+            /* NGUI
+        else if (target.GetComponent(typeof(UILabel))){
+            tempColor = fromColor = target.GetComponent<UILabel>().color;
+        }
+        else if (target.GetComponent(typeof(UISprite)))
+        {
+            tempColor = fromColor = target.GetComponent<UISprite>().color;
+        }
+        else if (target.GetComponent(typeof(UIPanel)))
+        {
+            tempColor = fromColor = new Color(1, 1, 1, target.GetComponent<UIPanel>().alpha);
+        }
+             * */
+        else if (target.GetComponent(typeof(SpriteRenderer)))
+        {
+            tempColor = fromColor = target.GetComponent<SpriteRenderer>().color;
+        }
+        else if (target.renderer)
+        {
+            tempColor = fromColor = target.renderer.material.color;
+        }
+        else if (target.light)
+        {
+            tempColor = fromColor = target.light.color;
+        }
 		
 		//set augmented fromColor:
 		if(args.Contains("color")){
@@ -737,11 +782,33 @@ public class iTween : MonoBehaviour{
 			target.guiTexture.color=fromColor;	
 		}else if(target.GetComponent(typeof(GUIText))){
 			target.guiText.material.color=fromColor;
-		}else if(target.renderer){
-			target.renderer.material.color=fromColor;
-		}else if(target.light){
-			target.light.color=fromColor;
-		}
+        }
+            /* NGUI
+        else if (target.GetComponent(typeof(UILabel)))
+        {
+            target.GetComponent<UILabel>().color = fromColor;
+        }
+        else if (target.GetComponent(typeof(UISprite)))
+        {
+            target.GetComponent<UISprite>().color = fromColor;
+        }
+        else if (target.GetComponent(typeof(UIPanel)))
+        {
+            target.GetComponent<UIPanel>().alpha = fromColor.a;
+        }
+             * */
+        else if (target.GetComponent(typeof(SpriteRenderer)))
+        {
+            target.GetComponent<SpriteRenderer>().color = fromColor;;
+        }
+        else if (target.renderer)
+        {
+            target.renderer.material.color = fromColor;
+        }
+        else if (target.light)
+        {
+            target.light.color = fromColor;
+        }
 		
 		//set new color arg:
 		args["color"]=tempColor;
@@ -3101,8 +3168,50 @@ public class iTween : MonoBehaviour{
 		args["method"]="scale";
 		args["easetype"]=EaseType.punch;
 		Launch(target,args);
-	}	
-	
+	}
+
+    public static void TweenList(GameObject target, params object[] list)
+    {
+        if (list.Length % 2 != 0)
+        {
+            Debug.Log("itween list param size error!");
+            return;
+        }
+        List<KeyValuePair<string, Hashtable>> tweenlist = new List<KeyValuePair<string, Hashtable>>();
+        for (int i = 0; i < list.Length; i += 2)
+            tweenlist.Add(new KeyValuePair<string, Hashtable>(list[i] as string, list[i + 1] as Hashtable));
+
+        TweenList(target, tweenlist.ToArray());
+    }
+
+    public static void TweenList(GameObject target, params KeyValuePair<string, Hashtable>[] tweenlist)
+    { 
+        //List<CallbackDelegate> tweenDelegates = new List<CallbackDelegate>();
+
+        for (int i = tweenlist.Length-1; i >= 0; i--)
+        {
+            MethodInfo method = typeof(iTween).GetMethod(tweenlist[i].Key, new Type[] { target.GetType(), typeof(Hashtable) });
+
+            if (method == null)
+            {
+                Debug.Log("itween list params error!");
+                return;
+            }
+
+            Hashtable hash = tweenlist[i].Value;
+
+            CallbackDelegate tweenDelegate = (tween) =>
+                {
+                    method.Invoke(null, new object[] { target, hash });
+                };
+
+            if (i > 0)
+                tweenlist[i - 1].Value.Add("oncomplete", tweenDelegate);
+            else
+                tweenDelegate(null);
+        }
+    }
+
 	#endregion
 	
 	#region #2 Generate Method Targets
@@ -3328,25 +3437,48 @@ public class iTween : MonoBehaviour{
 		}else if(GetComponent(typeof(GUIText))){
 			colors = new Color[1,3];
 			colors[0,0] = colors[0,1] = guiText.material.color;
-		}else if(GetComponent(typeof(tk2dSprite))){
-			colors = new Color[1,3];
-			colors[0,0] = colors[0,1] = GetComponent<tk2dSprite>().color;
-		}else if(renderer){
-			colors = new Color[renderer.materials.Length,3];
-			for (int i = 0; i < renderer.materials.Length; i++) {
-                if (renderer.materials[i].HasProperty(namedcolorvalue.ToString()))
-                {
-                    colors[i, 0] = renderer.materials[i].GetColor(namedcolorvalue.ToString());
-                    colors[i, 1] = renderer.materials[i].GetColor(namedcolorvalue.ToString());
-                }
-			}
-			//colors[0] = colors[1] = renderer.material.color;	
-		}else if(light){
-			colors = new Color[1,3];
-			colors[0,0] = colors[0,1] = light.color;	
-		}else{
-			colors = new Color[1,3]; //empty placeholder incase the GO is perhaps an empty holder or something similar
 		}
+            /* NGUI
+        else if (GetComponent(typeof(UILabel)))
+        {
+            colors = new Color[1, 3];
+            colors[0, 0] = colors[0, 1] = GetComponent<UILabel>().color;
+        }
+        else if (GetComponent(typeof(UISprite)))
+        {
+            colors = new Color[1, 3];
+            colors[0, 0] = colors[0, 1] = GetComponent<UISprite>().color;
+        }
+        else if (GetComponent(typeof(UIPanel)))
+        {
+            colors = new Color[1, 3];
+            colors[0, 0] = colors[0, 1] = new Color(1, 1, 1, GetComponent<UIPanel>().alpha);
+        }
+             * */
+        else if (GetComponent(typeof(SpriteRenderer)))
+        {
+            colors = new Color[1, 3];
+            colors[0, 0] = colors[0, 1] = GetComponent<SpriteRenderer>().color;
+        }
+        else if (renderer)
+        {
+            colors = new Color[renderer.materials.Length, 3];
+            for (int i = 0; i < renderer.materials.Length; i++)
+            {
+                colors[i, 0] = renderer.materials[i].GetColor(namedcolorvalue.ToString());
+                colors[i, 1] = renderer.materials[i].GetColor(namedcolorvalue.ToString());
+            }
+            //colors[0] = colors[1] = renderer.material.color;	
+        }
+        else if (light)
+        {
+            colors = new Color[1, 3];
+            colors[0, 0] = colors[0, 1] = light.color;
+        }
+        else
+        {
+            colors = new Color[1, 3]; //empty placeholder incase the GO is perhaps an empty holder or something similar
+        }
 		
 		//to values:
 		if (tweenArguments.Contains("color")) {
@@ -4116,35 +4248,61 @@ public class iTween : MonoBehaviour{
 		}else if(GetComponent(typeof(GUIText))){
 			//guiText.material.color=colors[2];
 			guiText.material.color=colors[0,2];
-		}else if(GetComponent(typeof(tk2dSprite))){
-			GetComponent<tk2dSprite>().color = colors[0,2];
-		}else if(renderer){
-			//renderer.material.color=colors[2];
-			for (int i = 0; i < colors.GetLength(0); i++) {
-				renderer.materials[i].SetColor(namedcolorvalue.ToString(),colors[i,2]);
-			}
-		}else if(light){
-			//light.color=colors[2];	
-			light.color=colors[0,2];
 		}
+            /* NGUI
+        else if (GetComponent(typeof(UILabel)))
+        {
+            GetComponent<UILabel>().color = colors[0, 2];
+        }
+        else if (GetComponent(typeof(UISprite)))
+        {
+            GetComponent<UISprite>().color = colors[0, 2];
+        }
+        else if (GetComponent(typeof(UIPanel)))
+        {
+            GetComponent<UIPanel>().alpha = colors[0, 2].a;
+        }
+             * */
+        else if (GetComponent(typeof(SpriteRenderer)))
+        {
+            GetComponent<SpriteRenderer>().color = colors[0, 2];
+        }
+        else if (renderer)
+        {
+            //renderer.material.color=colors[2];
+            for (int i = 0; i < colors.GetLength(0); i++)
+            {
+                renderer.materials[i].SetColor(namedcolorvalue.ToString(), colors[i, 2]);
+            }
+        }
+        else if (light)
+        {
+            //light.color=colors[2];	
+            light.color = colors[0, 2];
+        }
 		
 		//dial in:
 		if(percentage==1){
 			if(GetComponent(typeof(GUITexture))){
 				//guiTexture.color=colors[1];
 				guiTexture.color=colors[0,1];
-			}else if(GetComponent(typeof(GUIText))){
-				//guiText.material.color=colors[1];
-				guiText.material.color=colors[0,1];
-			}else if(renderer){
-				//renderer.material.color=colors[1];	
-				for (int i = 0; i < colors.GetLength(0); i++) {
-					renderer.materials[i].SetColor(namedcolorvalue.ToString(),colors[i,1]);
-				}
-			}else if(light){
-				//light.color=colors[1];	
-				light.color=colors[0,1];
-			}			
+			}else if (GetComponent(typeof (GUIText))) {
+			    //guiText.material.color=colors[1];
+			    guiText.material.color = colors[0, 1];
+			}
+            else if (GetComponent(typeof (SpriteRenderer))) {
+			    GetComponent<SpriteRenderer>().color = colors[0, 1];
+			}
+			else if (renderer) {
+			    //renderer.material.color=colors[1];	
+			    for (int i = 0; i < colors.GetLength(0); i++) {
+			        renderer.materials[i].SetColor(namedcolorvalue.ToString(), colors[i, 1]);
+			    }
+			}
+			else if (light) {
+			    //light.color=colors[1];	
+			    light.color = colors[0, 1];
+			}
 		}
 	}	
 	
@@ -4846,11 +5004,33 @@ public class iTween : MonoBehaviour{
 			colors[0] = colors[1] = target.guiTexture.color;
 		}else if(target.GetComponent(typeof(GUIText))){
 			colors[0] = colors[1] = target.guiText.material.color;
-		}else if(target.renderer){
-			colors[0] = colors[1] = target.renderer.material.color;
-		}else if(target.light){
-			colors[0] = colors[1] = target.light.color;	
-		}		
+        }
+            /* NGUI
+        else if (target.GetComponent(typeof(UILabel)))
+        {
+            colors[0] = colors[1] = target.GetComponent<UILabel>().color;
+        }
+        else if (target.GetComponent(typeof(UISprite)))
+        {
+            colors[0] = colors[1] = target.GetComponent<UISprite>().color;
+        }
+        else if (target.GetComponent(typeof(UIPanel)))
+        {
+            colors[0] = colors[1] = new Color(1, 1, 1, target.GetComponent<UIPanel>().alpha);
+        }
+             * */
+        else if (target.GetComponent(typeof(SpriteRenderer)))
+        {
+            colors[0] = colors[1] = target.GetComponent<SpriteRenderer>().color;
+        }
+        else if (target.renderer)
+        {
+            colors[0] = colors[1] = target.renderer.material.color;
+        }
+        else if (target.light)
+        {
+            colors[0] = colors[1] = target.light.color;
+        }		
 		
 		//to values:
 		if (args.Contains("color")) {
@@ -4881,11 +5061,33 @@ public class iTween : MonoBehaviour{
 			target.guiTexture.color=colors[3];
 		}else if(target.GetComponent(typeof(GUIText))){
 			target.guiText.material.color=colors[3];
-		}else if(target.renderer){
-			target.renderer.material.color=colors[3];
-		}else if(target.light){
-			target.light.color=colors[3];	
-		}
+        }
+            /* NGUI
+        else if (target.GetComponent(typeof(UILabel)))
+        {
+            target.GetComponent<UILabel>().color = colors[3];
+        }
+        else if (target.GetComponent(typeof(UISprite)))
+        {
+            target.GetComponent<UISprite>().color = colors[3];
+        }
+        else if (target.GetComponent(typeof(UIPanel)))
+        {
+            target.GetComponent<UIPanel>().alpha = colors[3].a;
+        }
+             * */
+        else if (target.GetComponent(typeof(SpriteRenderer)))
+        {
+            target.GetComponent<SpriteRenderer>().color = colors[3];
+        }
+        else if (target.renderer)
+        {
+            target.renderer.material.color = colors[3];
+        }
+        else if (target.light)
+        {
+            target.light.color = colors[3];
+        }
 	}	
 	
 	/// <summary>
@@ -6292,14 +6494,14 @@ public class iTween : MonoBehaviour{
 	//#################################	
 	
 	/// <summary>
-	/// Count all iTweens in current scene.
+	/// LifeCount all iTweens in current scene.
 	/// </summary>
 	public static int Count(){
 		return(tweens.Count);
 	}
 	
 	/// <summary>
-	/// Count all iTweens in current scene of a particular type.
+	/// LifeCount all iTweens in current scene of a particular type.
 	/// </summary>
 	/// <param name="type">
 	/// A <see cref="System.String"/> name of the type of iTween you would like to stop.  Can be written as part of a name such as "mov" for all "MoveTo" iTweens.
@@ -6320,7 +6522,7 @@ public class iTween : MonoBehaviour{
 	}			
 
 	/// <summary>
-	/// Count all iTweens on a GameObject.
+	/// LifeCount all iTweens on a GameObject.
 	/// </summary>
 	public static int Count(GameObject target){
 		Component[] tweens = target.GetComponents(typeof(iTween));
@@ -6328,7 +6530,7 @@ public class iTween : MonoBehaviour{
 	}
 	
 	/// <summary>
-	/// Count all iTweens on a GameObject of a particular type.
+	/// LifeCount all iTweens on a GameObject of a particular type.
 	/// </summary>
 	/// <param name="type">
 	/// A <see cref="System.String"/> name of the type of iTween you would like to count.  Can be written as part of a name such as "mov" for all "MoveTo" iTweens.
@@ -6940,6 +7142,9 @@ public class iTween : MonoBehaviour{
 		case EaseType.easeInOutQuint:
 			ease = new EasingFunction(easeInOutQuint);
 			break;
+        case EaseType.easeOutInQuint:
+            ease = new EasingFunction(easeOutInQuint);
+            break;
 		case EaseType.easeInSine:
 			ease = new EasingFunction(easeInSine);
 			break;
@@ -7012,6 +7217,96 @@ public class iTween : MonoBehaviour{
 		/* GFX47 MOD END */
 		}
 	}
+
+    public static EasingFunction GetEasingFunction(EaseType easeType)
+    {
+        switch (easeType)
+        {
+            case EaseType.easeInQuad:
+                return easeInQuad;
+            case EaseType.easeOutQuad:
+                return easeOutQuad;
+            case EaseType.easeInOutQuad:
+                return easeInOutQuad;
+            case EaseType.easeInCubic:
+                return easeInCubic;
+            case EaseType.easeOutCubic:
+                return easeOutCubic;
+            case EaseType.easeInOutCubic:
+                return easeInOutCubic;
+            case EaseType.easeInQuart:
+                return easeInQuart;
+            case EaseType.easeOutQuart:
+                return easeOutQuart;
+            case EaseType.easeInOutQuart:
+                return easeInOutQuart;
+            case EaseType.easeInQuint:
+                return easeInQuint;
+            case EaseType.easeOutQuint:
+                return easeOutQuint;
+            case EaseType.easeInOutQuint:
+                return easeInOutQuint;
+            case EaseType.easeOutInQuint:
+                return easeOutInQuint;
+            case EaseType.easeInSine:
+                return easeInSine;
+            case EaseType.easeOutSine:
+                return easeOutSine;
+            case EaseType.easeInOutSine:
+                return easeInOutSine;
+            case EaseType.easeInExpo:
+                return easeInExpo;
+            case EaseType.easeOutExpo:
+                return easeOutExpo;
+            case EaseType.easeInOutExpo:
+                return easeInOutExpo;
+            case EaseType.easeInCirc:
+                return easeInCirc;
+            case EaseType.easeOutCirc:
+                return easeOutCirc;
+            case EaseType.easeInOutCirc:
+                return easeInOutCirc;
+            case EaseType.linear:
+                return linear;
+            case EaseType.spring:
+                return spring;
+            /* GFX47 MOD START */
+            /*case EaseType.bounce:
+                return bounce;*/
+            case EaseType.easeInBounce:
+                return easeInBounce;
+            case EaseType.easeOutBounce:
+                return easeOutBounce;
+            case EaseType.easeInOutBounce:
+                return easeInOutBounce;
+            /* GFX47 MOD END */
+            case EaseType.easeInBack:
+                return easeInBack;
+            case EaseType.easeOutBack:
+                return easeOutBack;
+            case EaseType.easeInOutBack:
+                return easeInOutBack;
+            /* GFX47 MOD START */
+            /*case EaseType.elastic:
+                return elastic;*/
+            case EaseType.easeInElastic:
+                return easeInElastic;
+            case EaseType.easeOutElastic:
+                return easeOutElastic;
+            case EaseType.easeInOutElastic:
+                return easeInOutElastic;
+            /* GFX47 MOD END */
+
+            default:
+                return linear;
+        }
+    }
+
+    public static float GetEasingValue(float start, float end, float value, EaseType easeType)
+    {
+        EasingFunction ef = GetEasingFunction(easeType);
+        return ef(start, end, value);
+    }
 	
 	//calculate percentage of tween based on time:
 	void UpdatePercentage(){
@@ -7037,6 +7332,20 @@ public class iTween : MonoBehaviour{
 	
 	void CallBack(string callbackType){
 		if (tweenArguments.Contains(callbackType) && !tweenArguments.Contains("ischild")) {
+            var callback = tweenArguments[callbackType];
+
+            // if callback is CallbackDelegate, then just invoke
+            if (callback is CallbackDelegate)
+            {
+                (callback as CallbackDelegate)(this);
+                return;
+            }
+            else if (callback is ValueCallbackDelegate)
+            {
+                (callback as ValueCallbackDelegate)((object)tweenArguments[callbackType + "params"]);
+                return;
+            }
+
 			//establish target:
 			GameObject target;
 			if (tweenArguments.Contains(callbackType+"target")) {
@@ -7130,12 +7439,14 @@ public class iTween : MonoBehaviour{
 	#endregion	
 	
 	#region Easing Curves
-	
-	private float linear(float start, float end, float value){
+
+    static float linear(float start, float end, float value)
+    {
 		return Mathf.Lerp(start, end, value);
 	}
-	
-	private float clerp(float start, float end, float value){
+
+    static float clerp(float start, float end, float value)
+    {
 		float min = 0.0f;
 		float max = 360.0f;
 		float half = Mathf.Abs((max - min) / 2.0f);
@@ -7151,23 +7462,27 @@ public class iTween : MonoBehaviour{
 		return retval;
     }
 
-	private float spring(float start, float end, float value){
+    static float spring(float start, float end, float value)
+    {
 		value = Mathf.Clamp01(value);
 		value = (Mathf.Sin(value * Mathf.PI * (0.2f + 2.5f * value * value * value)) * Mathf.Pow(1f - value, 2.2f) + value) * (1f + (1.2f * (1f - value)));
 		return start + (end - start) * value;
 	}
 
-	private float easeInQuad(float start, float end, float value){
+    static float easeInQuad(float start, float end, float value)
+    {
 		end -= start;
 		return end * value * value + start;
 	}
 
-	private float easeOutQuad(float start, float end, float value){
+    static float easeOutQuad(float start, float end, float value)
+    {
 		end -= start;
 		return -end * value * (value - 2) + start;
 	}
 
-	private float easeInOutQuad(float start, float end, float value){
+    static float easeInOutQuad(float start, float end, float value)
+    {
 		value /= .5f;
 		end -= start;
 		if (value < 1) return end / 2 * value * value + start;
@@ -7175,18 +7490,21 @@ public class iTween : MonoBehaviour{
 		return -end / 2 * (value * (value - 2) - 1) + start;
 	}
 
-	private float easeInCubic(float start, float end, float value){
+    static float easeInCubic(float start, float end, float value)
+    {
 		end -= start;
 		return end * value * value * value + start;
 	}
 
-	private float easeOutCubic(float start, float end, float value){
+    static float easeOutCubic(float start, float end, float value)
+    {
 		value--;
 		end -= start;
 		return end * (value * value * value + 1) + start;
 	}
 
-	private float easeInOutCubic(float start, float end, float value){
+    static float easeInOutCubic(float start, float end, float value)
+    {
 		value /= .5f;
 		end -= start;
 		if (value < 1) return end / 2 * value * value * value + start;
@@ -7194,18 +7512,21 @@ public class iTween : MonoBehaviour{
 		return end / 2 * (value * value * value + 2) + start;
 	}
 
-	private float easeInQuart(float start, float end, float value){
+    static float easeInQuart(float start, float end, float value)
+    {
 		end -= start;
 		return end * value * value * value * value + start;
 	}
 
-	private float easeOutQuart(float start, float end, float value){
+    static float easeOutQuart(float start, float end, float value)
+    {
 		value--;
 		end -= start;
 		return -end * (value * value * value * value - 1) + start;
 	}
 
-	private float easeInOutQuart(float start, float end, float value){
+    static float easeInOutQuart(float start, float end, float value)
+    {
 		value /= .5f;
 		end -= start;
 		if (value < 1) return end / 2 * value * value * value * value + start;
@@ -7213,18 +7534,30 @@ public class iTween : MonoBehaviour{
 		return -end / 2 * (value * value * value * value - 2) + start;
 	}
 
-	private float easeInQuint(float start, float end, float value){
+    static float easeInQuint(float start, float end, float value)
+    {
 		end -= start;
 		return end * value * value * value * value * value + start;
 	}
 
-	private float easeOutQuint(float start, float end, float value){
+    static float easeOutInQuint(float start, float end, float value)
+    {
+        value /= .5f;
+        if (value <= 1)
+            return easeOutQuint(start, (start + end) * .5f, value);
+        else
+            return easeInQuint((start + end) * .5f, end, value - 1);
+    }
+
+    static float easeOutQuint(float start, float end, float value)
+    {
 		value--;
 		end -= start;
 		return end * (value * value * value * value * value + 1) + start;
 	}
 
-	private float easeInOutQuint(float start, float end, float value){
+    static float easeInOutQuint(float start, float end, float value)
+    {
 		value /= .5f;
 		end -= start;
 		if (value < 1) return end / 2 * value * value * value * value * value + start;
@@ -7232,32 +7565,38 @@ public class iTween : MonoBehaviour{
 		return end / 2 * (value * value * value * value * value + 2) + start;
 	}
 
-	private float easeInSine(float start, float end, float value){
+    static float easeInSine(float start, float end, float value)
+    {
 		end -= start;
 		return -end * Mathf.Cos(value / 1 * (Mathf.PI / 2)) + end + start;
 	}
 
-	private float easeOutSine(float start, float end, float value){
+    static float easeOutSine(float start, float end, float value)
+    {
 		end -= start;
 		return end * Mathf.Sin(value / 1 * (Mathf.PI / 2)) + start;
 	}
 
-	private float easeInOutSine(float start, float end, float value){
+    static float easeInOutSine(float start, float end, float value)
+    {
 		end -= start;
 		return -end / 2 * (Mathf.Cos(Mathf.PI * value / 1) - 1) + start;
 	}
 
-	private float easeInExpo(float start, float end, float value){
+    static float easeInExpo(float start, float end, float value)
+    {
 		end -= start;
 		return end * Mathf.Pow(2, 10 * (value / 1 - 1)) + start;
 	}
 
-	private float easeOutExpo(float start, float end, float value){
+    static float easeOutExpo(float start, float end, float value)
+    {
 		end -= start;
 		return end * (-Mathf.Pow(2, -10 * value / 1) + 1) + start;
 	}
 
-	private float easeInOutExpo(float start, float end, float value){
+    static float easeInOutExpo(float start, float end, float value)
+    {
 		value /= .5f;
 		end -= start;
 		if (value < 1) return end / 2 * Mathf.Pow(2, 10 * (value - 1)) + start;
@@ -7265,18 +7604,21 @@ public class iTween : MonoBehaviour{
 		return end / 2 * (-Mathf.Pow(2, -10 * value) + 2) + start;
 	}
 
-	private float easeInCirc(float start, float end, float value){
+    static float easeInCirc(float start, float end, float value)
+    {
 		end -= start;
 		return -end * (Mathf.Sqrt(1 - value * value) - 1) + start;
 	}
 
-	private float easeOutCirc(float start, float end, float value){
+    static float easeOutCirc(float start, float end, float value)
+    {
 		value--;
 		end -= start;
 		return end * Mathf.Sqrt(1 - value * value) + start;
 	}
 
-	private float easeInOutCirc(float start, float end, float value){
+    static float easeInOutCirc(float start, float end, float value)
+    {
 		value /= .5f;
 		end -= start;
 		if (value < 1) return -end / 2 * (Mathf.Sqrt(1 - value * value) - 1) + start;
@@ -7285,7 +7627,8 @@ public class iTween : MonoBehaviour{
 	}
 
 	/* GFX47 MOD START */
-	private float easeInBounce(float start, float end, float value){
+    static float easeInBounce(float start, float end, float value)
+    {
 		end -= start;
 		float d = 1f;
 		return end - easeOutBounce(0, end, d-value) + start;
@@ -7294,7 +7637,8 @@ public class iTween : MonoBehaviour{
 
 	/* GFX47 MOD START */
 	//private float bounce(float start, float end, float value){
-	private float easeOutBounce(float start, float end, float value){
+    static float easeOutBounce(float start, float end, float value)
+    {
 		value /= 1f;
 		end -= start;
 		if (value < (1 / 2.75f)){
@@ -7313,7 +7657,8 @@ public class iTween : MonoBehaviour{
 	/* GFX47 MOD END */
 
 	/* GFX47 MOD START */
-	private float easeInOutBounce(float start, float end, float value){
+    static float easeInOutBounce(float start, float end, float value)
+    {
 		end -= start;
 		float d = 1f;
 		if (value < d/2) return easeInBounce(0, end, value*2) * 0.5f + start;
@@ -7321,21 +7666,24 @@ public class iTween : MonoBehaviour{
 	}
 	/* GFX47 MOD END */
 
-	private float easeInBack(float start, float end, float value){
+    static float easeInBack(float start, float end, float value)
+    {
 		end -= start;
 		value /= 1;
 		float s = 1.70158f;
 		return end * (value) * value * ((s + 1) * value - s) + start;
 	}
 
-	private float easeOutBack(float start, float end, float value){
+    static float easeOutBack(float start, float end, float value)
+    {
 		float s = 1.70158f;
 		end -= start;
 		value = (value / 1) - 1;
 		return end * ((value) * value * ((s + 1) * value + s) + 1) + start;
 	}
 
-	private float easeInOutBack(float start, float end, float value){
+    static float easeInOutBack(float start, float end, float value)
+    {
 		float s = 1.70158f;
 		end -= start;
 		value /= .5f;
@@ -7348,7 +7696,8 @@ public class iTween : MonoBehaviour{
 		return end / 2 * ((value) * value * (((s) + 1) * value + s) + 2) + start;
 	}
 
-	private float punch(float amplitude, float value){
+    static float punch(float amplitude, float value)
+    {
 		float s = 9;
 		if (value == 0){
 			return 0;
@@ -7362,7 +7711,8 @@ public class iTween : MonoBehaviour{
     }
 	
 	/* GFX47 MOD START */
-	private float easeInElastic(float start, float end, float value){
+    static float easeInElastic(float start, float end, float value)
+    {
 		end -= start;
 		
 		float d = 1f;
@@ -7387,7 +7737,8 @@ public class iTween : MonoBehaviour{
 
 	/* GFX47 MOD START */
 	//private float elastic(float start, float end, float value){
-	private float easeOutElastic(float start, float end, float value){
+    static float easeOutElastic(float start, float end, float value)
+    {
 	/* GFX47 MOD END */
 		//Thank you to rafael.marteleto for fixing this as a port over from Pedro's UnityTween
 		end -= start;
@@ -7412,7 +7763,8 @@ public class iTween : MonoBehaviour{
 	}		
 	
 	/* GFX47 MOD START */
-	private float easeInOutElastic(float start, float end, float value){
+    static float easeInOutElastic(float start, float end, float value)
+    {
 		end -= start;
 		
 		float d = 1f;
@@ -7482,7 +7834,7 @@ public class iTween : MonoBehaviour{
 	public static void stab(GameObject target, Hashtable args){Debug.LogError("iTween Error: stab() has been renamed to Stab().");}
 	public static void stop(GameObject target, Hashtable args){Debug.LogError("iTween Error: stop() has been renamed to Stop().");}
 	public static void stopType(GameObject target, Hashtable args){Debug.LogError("iTween Error: stopType() has been deprecated. Please investigate Stop().");}
-	public static void tweenCount(GameObject target, Hashtable args){Debug.LogError("iTween Error: tweenCount() has been deprecated. Please investigate Count().");}
+	public static void tweenCount(GameObject target, Hashtable args){Debug.LogError("iTween Error: tweenCount() has been deprecated. Please investigate LifeCount().");}
 	*/
 	#endregion
 } 

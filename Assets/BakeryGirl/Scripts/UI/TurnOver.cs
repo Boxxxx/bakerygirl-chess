@@ -5,20 +5,14 @@ public class TurnOver : MonoBehaviour {
 
     void Start()
     {
-        GetComponent<UIButton>().defaultColor = new Color(1, 1, 1);
-        sprite_spark spark = transform.Find("Background").GetComponent<UISprite>().gameObject.AddComponent<sprite_spark>();
+        sprite_spark spark = gameObject.AddComponent<sprite_spark>();
         spark.isSparkAlpha = false;
         spark.workType = sprite_spark.WorkingType.UISprite;
-        GetComponent<UIButton>().UpdateColor(true, true);
     }
 
-    void OnClick()
+    public void OnClick()
     {
         GlobalInfo.Instance.controller.NextTurn(true);
     }
 
-    void Update()
-    {
-        
-    }
 }

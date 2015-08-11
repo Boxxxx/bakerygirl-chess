@@ -1,5 +1,6 @@
 using UnityEngine;
 using System.Collections.Generic;
+using FullInspector;
 
 public class SlotInfo {
     public Unit.TypeEnum type = Unit.TypeEnum.Void;
@@ -14,11 +15,14 @@ public class SlotInfo {
 /// <summary>
 /// Maintain Chessboard and game turn
 /// </summary>
-public class Board : MonoBehaviour
+public class Board : BaseBehavior
 {
     #region Enums
     public enum GridState {Base0, Base1, Void, Bread};
     #endregion
+
+    public GameObject unitPrefab;
+    public Dictionary<string, Card> cardGraphics;
 
     #region Variables
     private tk2dSprite sprite;
@@ -145,7 +149,7 @@ public class Board : MonoBehaviour
         if (info.owner != Unit.OwnerEnum.None && GetUnitOwner(info.pos) != Unit.OwnerEnum.None)
             return false;
 
-        Unit unit = GlobalInfo.Instance.storage.CreateUnit(info);
+        Unit unit = InstantiateUnit(info);
 
         Put(info.pos, unit);
 
@@ -213,7 +217,32 @@ public class Board : MonoBehaviour
         int sum = GetPlayerTotalCount(owner);
         return sum - GetPlayerInfo(Unit.TypeEnum.Bread, owner);
     }
-#endregion
+
+    /// <summary>
+    /// Create a specific unit with UnitInfo
+    /// </summary>
+    /// <param name="info">the info to create</param>
+    /// <returns></returns>
+    public Unit InstantiateUnit(UnitInfo info) {
+        Unit unit = (Instantiate(unitPrefab) as GameObject).GetComponent<Unit>();
+        unit.Initialize(info);
+        return unit;
+    }
+
+    public void SwitchTurn(Unit.OwnerEnum owner) {
+        foreach (var unit in boardUnit) {
+            if (unit == null) {
+                continue;
+            }
+            if (unit.Owner == owner) {
+                unit.CardActive = true;
+            }
+            else {
+                unit.CardActive = false;
+            }
+        }
+    }
+    #endregion
 
     #region Get & Set Functions
     /// <summary>
@@ -249,12 +278,14 @@ public class Board : MonoBehaviour
     /// </summary>
     /// <param name="position">the position to query</param>
     /// <returns></returns>
-    public Unit GetUnit(Position position)
+    public Unit GetUnit(Position position, bool includeBread = true)
     {
         if (boardUnit[position.R, position.C] != null)
             return boardUnit[position.R, position.C];
-        else
+        else if (includeBread)
             return boardBread[position.R, position.C];
+        else
+            return null;
     }
     /// <summary>
     /// Get the unit infoof specific position
@@ -315,6 +346,28 @@ public class Board : MonoBehaviour
             }
         }
         return boardSummary;
+    }
+
+    public Card GetCardGraphics(Unit.TypeEnum type, Unit.OwnerEnum owner) {
+        string spriteName = GetCardName(type, owner);
+        return cardGraphics.ContainsKey(spriteName) ? cardGraphics[spriteName] : null;
+    }
+
+    public Card GetCardGraphicsByName(string name) {
+        return cardGraphics.ContainsKey(name) ? cardGraphics[name] : null;
+    }
+
+    public static string GetCardName(Unit.TypeEnum type, Unit.OwnerEnum owner) {
+        string spriteName;
+        if (type == Unit.TypeEnum.Bread)
+            spriteName = "bread";
+        else if (type == Unit.TypeEnum.Void)
+            spriteName = "void";
+        else if (type == Unit.TypeEnum.Tile)
+            spriteName = "tile";
+        else
+            spriteName = type.ToString().ToLower() + ((int)owner).ToString();
+        return spriteName;
     }
     #endregion
 

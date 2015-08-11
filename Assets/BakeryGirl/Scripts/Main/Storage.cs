@@ -33,7 +33,7 @@ public class Storage : BaseBehavior
     /// </summary>
     /// <param name="info">the info to create</param>
     /// <returns></returns>
-    public Unit CreateUnit(UnitInfo info)
+    public Unit InstantiateUnit(UnitInfo info)
     {
         Unit unit = (Instantiate(unitPrefab) as GameObject).GetComponent<Unit>();
         unit.Initialize(info);
@@ -81,7 +81,7 @@ public class Storage : BaseBehavior
     /// <returns></returns>
     public bool BuyCard(Unit.TypeEnum type, Unit.OwnerEnum owner)
     {
-        Unit newCard = CreateUnit(new UnitInfo(BoardInfo.Base[(int)turn], type, owner));
+        Unit newCard = GlobalInfo.Instance.board.InstantiateUnit(new UnitInfo(BoardInfo.Base[(int)turn], type, owner));
         Transform card = NowBoard.transform.Find("Unit").transform.Find(TypeToIndex(type).ToString());
         newCard.transform.position = card.transform.position;
 
@@ -102,26 +102,9 @@ public class Storage : BaseBehavior
     public Vector3 GetCollectPoint(Unit.OwnerEnum owner)
     {
         if (owner == Unit.OwnerEnum.Black)
-            return board0.transform.position + StorageInfo.collectPointOffset;
+            return board0.transform.FindChild("Resource").position;
         else
-            return board1.transform.position + StorageInfo.collectPointOffset;
-    }
-
-    public GameObject GetCardGraphics(Unit.TypeEnum type, Unit.OwnerEnum owner) {
-        string spriteName;
-        if (type == Unit.TypeEnum.Bread)
-            spriteName = "bread";
-        else if (type == Unit.TypeEnum.Void)
-            spriteName = "void";
-        else if (type == Unit.TypeEnum.Tile)
-            spriteName = "tile";
-        else
-            spriteName = type.ToString().ToLower() + ((int)owner).ToString();
-        return cardGraphics.ContainsKey(spriteName) ? cardGraphics[spriteName] : null;
-    }
-
-    public GameObject GetCardGraphicsByName(string name) {
-        return cardGraphics.ContainsKey(name) ? cardGraphics[name] : null;
+            return board1.transform.FindChild("Resource").position;
     }
 
     /// <summary>
@@ -180,7 +163,7 @@ public class Storage : BaseBehavior
     {
         for (int i = 0; i < StorageInfo.CardTypeList.Length; i++)
         {
-            Unit unit = CreateUnit(new UnitInfo(StorageInfo.CardTypeList[i], owner));
+            Unit unit = GlobalInfo.Instance.board.InstantiateUnit(new UnitInfo(StorageInfo.CardTypeList[i], owner));
             unit.name = i.ToString();
             unit.transform.parent = board.transform.Find("Unit");
             unit.transform.localPosition = StorageInfo.CardPosOffset[i];
@@ -206,7 +189,7 @@ public class Storage : BaseBehavior
     #region Unity Callback Functions
     protected override void Awake() {
         base.Awake();
-        GlobalInfo.Instance.storage = this;
+        //GlobalInfo.Instance.storage = this;
         resourceNum = new int[2] { 0, 0 };
     }
 
