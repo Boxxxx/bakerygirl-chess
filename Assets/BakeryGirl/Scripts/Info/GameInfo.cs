@@ -65,8 +65,8 @@ public class StorageInfo
                                                         new Vector3(0.50f, -1.015f, 0),
                                                         new Vector3(-0.58f, 0.005f, 0),
                                                         new Vector3(0.50f, 0.005f, 0) };
-    public static readonly Unit.TypeEnum[] CardTypeList = { Unit.TypeEnum.Scout, Unit.TypeEnum.Pioneer, Unit.TypeEnum.Bomb, Unit.TypeEnum.Boss };
-    public static readonly int[] CardCost = { 1, 1, 1, 2 };
+    public static readonly Unit.TypeEnum[] CardTypeList = { Unit.TypeEnum.Scout, Unit.TypeEnum.Pioneer, Unit.TypeEnum.Boss, Unit.TypeEnum.Bomb };
+    public static readonly int[] CardCost = { 1, 1, 2, 1 };
 }
 
 public class UnitInfo : ICloneable  

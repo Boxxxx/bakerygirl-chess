@@ -31,7 +31,7 @@ public class PlayerUI : MonoBehaviour {
             endTurn.interactable = value;
             cancel.interactable = value;
             flag.gameObject.SetActive(value);
-            //waitingMask.gameObject.SetActive(!value);
+            waitingMask.gameObject.SetActive(!value);
             foreach (var card in cards) {
                 card.interactable = value;
             }

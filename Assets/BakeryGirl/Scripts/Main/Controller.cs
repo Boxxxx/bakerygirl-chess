@@ -138,16 +138,24 @@ public class Hint
 
 public class GameCache {
     public GameDescriptor descriptor;
-    public Position lastMovePos;
+    public LastMoveInfo lastMove;
 
-    public GameCache(Board board, Unit.OwnerEnum turn, Unit lastMove) {
+    public GameCache(Board board, Unit.OwnerEnum turn, LastMoveInfo lastMove) {
         descriptor = new GameDescriptor(board, turn);
-        if (lastMove == null) {
-            lastMovePos = new Position(-1, -1);
-        }
-        else {
-            lastMovePos = lastMove.Pos;
-        }
+        this.lastMove = lastMove;
+    }
+}
+
+public class LastMoveInfo {
+    public Position from;
+    public Position to;
+    public LastMoveInfo(Position from, Position to) {
+        this.from = from;
+        this.to = to;
+    }
+    public Vector2 GetOffset() {
+        var offset = to - from;
+        return new Vector2(offset.C, offset.R);
     }
 }
 
@@ -187,7 +195,7 @@ public class Controller : MonoBehaviour
     private StorageUI storage;
     private Hint hint = new Hint();
     private Ruler.GameResult result;
-    private Unit lastMoveUnit;
+    private LastMoveInfo lastMove;
 
     // Game Cache
     private GameCache cache;
@@ -273,8 +281,8 @@ public class Controller : MonoBehaviour
         hint.ClearHints();
         board.RollbackGame(cache);
         storage.RollbackGame(cache);
-        lastMoveUnit = board.GetUnit(cache.lastMovePos, false);
-        lastMoveHint.Focus(lastMoveUnit);
+        lastMove = cache.lastMove;
+        lastMoveHint.Focus(lastMove);
         turn = cache.descriptor.Turn;
         state = MainState.Move;
         moveState = MoveState.Idle;
@@ -295,9 +303,9 @@ public class Controller : MonoBehaviour
 
         if (effect == EffectType.Move)
         {
-            if (lastMoveUnit != null)
+            if (lastMove != null)
             {
-                lastMoveHint.Focus(lastMoveUnit);
+                lastMoveHint.Focus(lastMove);
                 //lastMove.Focus = true;
             }
         }
@@ -317,16 +325,17 @@ public class Controller : MonoBehaviour
 
     private void MoveEffect(Unit src, Position pos)
     {
+        var originPos = src.Pos;
         board.Pick(src.Pos);
         src.Pos = pos;
         Vector2 targetPos = Unit.PosToScreen(pos);
         iTween.MoveTo(src.gameObject, iTween.Hash("position", new Vector3(targetPos.x, targetPos.y, 0), "time", 0.2f, "oncomplete", "OnMoveComplete", "oncompletetarget", src.gameObject));
         StartEffect(EffectType.Move);
 
-        if (lastMoveUnit != null) {
+        if (lastMove != null) {
             lastMoveHint.UnFocus();
         }
-        lastMoveUnit = src;
+        lastMove = new LastMoveInfo(originPos, pos);
     }
 
     private void CollectBreadEffect(Unit bread, Unit.OwnerEnum owner)
@@ -361,7 +370,7 @@ public class Controller : MonoBehaviour
     {
         this.gameMode = gameMode;
 
-        lastMoveUnit = null;
+        lastMove = null;
         moveState = MoveState.Idle;
         ClearEffect();
         hint.ClearHints();
@@ -397,7 +406,7 @@ public class Controller : MonoBehaviour
         if (gameMode == GameMode.Agent) {
             AgentSwitchTurn(initial);
         }
-        cache = new GameCache(board, turn, lastMoveUnit);
+        cache = new GameCache(board, turn, lastMove);
     }
     private void OnGameOver()
     {
