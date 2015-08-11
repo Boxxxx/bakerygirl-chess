@@ -267,7 +267,7 @@ public class Controller : MonoBehaviour
         }
     }
     public void RollbackGame() {
-        if (effectNum != 0) {
+        if (effectNum != 0 && !(state == MainState.Move || state == MainState.Wait)) {
             return;
         }
         hint.ClearHints();
@@ -286,6 +286,7 @@ public class Controller : MonoBehaviour
     {
         effectNum++;
         storage.IsEndTurnValid = false;
+        storage.IsCancelValid = false;
     }
 
     public void StopEffect(EffectType effect = EffectType.Unknown)
@@ -302,6 +303,10 @@ public class Controller : MonoBehaviour
         }
         if (state == MainState.Wait && effectNum == 0) {
             storage.IsEndTurnValid = true;
+            storage.IsCancelValid = true;
+        }
+        else if (state == MainState.Move && effectNum == 0) {
+            storage.IsCancelValid = true;
         }
     }
 
@@ -368,6 +373,7 @@ public class Controller : MonoBehaviour
             resultSprite.gameObject.SetActive(false);
         }
         storage.IsEndTurnValid = false;
+        storage.IsCancelValid = false;
 
         _actionLogs.Clear();
         _actionsCurrentTurn.Clear();

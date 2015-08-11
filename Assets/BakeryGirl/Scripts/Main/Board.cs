@@ -386,7 +386,8 @@ public class Board : BaseBehavior
     #endregion
 
     #region Unity Callback Function
-    void Awake() {
+    protected override void Awake() {
+        base.Awake();
         GlobalInfo.Instance.mainCamera = GameObject.Find("MainCamera").GetComponent<Camera>();
         GlobalInfo.Instance.board = this;
 	}

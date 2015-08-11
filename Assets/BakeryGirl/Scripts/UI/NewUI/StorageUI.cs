@@ -6,7 +6,6 @@ using BakeryGirl.Chess;
 public class StorageUI : MonoBehaviour {
     public PlayerUI player0;
     public PlayerUI player1;
-    public Dictionary<Unit.TypeEnum, Sprite> cards;
 
     public PlayerUI NowPlayer {
         get {
@@ -20,6 +19,11 @@ public class StorageUI : MonoBehaviour {
     public bool IsEndTurnValid {
         set {
             NowPlayer.endTurn.interactable = value;
+        }
+    }
+    public bool IsCancelValid {
+        set {
+            NowPlayer.cancel.interactable = value;
         }
     }
 
@@ -66,6 +70,7 @@ public class StorageUI : MonoBehaviour {
         player0.IsMyTurn = turn == Unit.OwnerEnum.Black;
         player1.IsMyTurn = turn != Unit.OwnerEnum.Black;
         NowPlayer.endTurn.interactable = false;
+        NowPlayer.cancel.interactable = false;
     }
 
     /// <summary>
