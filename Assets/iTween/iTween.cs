@@ -37,6 +37,7 @@ using System.Collections;
 using System.Collections.Generic;
 using System.Reflection;
 using UnityEngine;
+using UnityEngine.UI;
 #endregion
 
 /// <summary>
@@ -741,6 +742,10 @@ public class iTween : MonoBehaviour{
         {
             tempColor = fromColor = target.GetComponent<SpriteRenderer>().color;
         }
+        else if (target.GetComponent(typeof(Image))) 
+        {
+            tempColor = fromColor = target.GetComponent<Image>().color;
+        }
         else if (target.renderer)
         {
             tempColor = fromColor = target.renderer.material.color;
@@ -800,6 +805,10 @@ public class iTween : MonoBehaviour{
         else if (target.GetComponent(typeof(SpriteRenderer)))
         {
             target.GetComponent<SpriteRenderer>().color = fromColor;;
+        }
+        else if (target.GetComponent(typeof(Image))) 
+        {
+            target.GetComponent<Image>().color = fromColor;
         }
         else if (target.renderer)
         {
@@ -3460,6 +3469,11 @@ public class iTween : MonoBehaviour{
             colors = new Color[1, 3];
             colors[0, 0] = colors[0, 1] = GetComponent<SpriteRenderer>().color;
         }
+        else if (GetComponent(typeof(Image))) 
+        {
+            colors = new Color[1, 3];
+            colors[0, 0] = colors[0, 1] = GetComponent<Image>().color;
+        }
         else if (renderer)
         {
             colors = new Color[renderer.materials.Length, 3];
@@ -4267,6 +4281,10 @@ public class iTween : MonoBehaviour{
         {
             GetComponent<SpriteRenderer>().color = colors[0, 2];
         }
+        else if (GetComponent(typeof(Image))) 
+        {
+            GetComponent<Image>().color = colors[0, 2];
+        }
         else if (renderer)
         {
             //renderer.material.color=colors[2];
@@ -4293,6 +4311,9 @@ public class iTween : MonoBehaviour{
             else if (GetComponent(typeof (SpriteRenderer))) {
 			    GetComponent<SpriteRenderer>().color = colors[0, 1];
 			}
+            else if (GetComponent(typeof (Image))) {
+                GetComponent<Image>().color = colors[0, 1];
+            }
 			else if (renderer) {
 			    //renderer.material.color=colors[1];	
 			    for (int i = 0; i < colors.GetLength(0); i++) {
@@ -5023,6 +5044,10 @@ public class iTween : MonoBehaviour{
         {
             colors[0] = colors[1] = target.GetComponent<SpriteRenderer>().color;
         }
+        else if (target.GetComponent(typeof(Image))) 
+        {
+            colors[0] = colors[1] = target.GetComponent<Image>().color;
+        }
         else if (target.renderer)
         {
             colors[0] = colors[1] = target.renderer.material.color;
@@ -5079,6 +5104,10 @@ public class iTween : MonoBehaviour{
         else if (target.GetComponent(typeof(SpriteRenderer)))
         {
             target.GetComponent<SpriteRenderer>().color = colors[3];
+        }
+        else if (target.GetComponent(typeof(Image)))
+        {
+            target.GetComponent<Image>().color = colors[3];
         }
         else if (target.renderer)
         {

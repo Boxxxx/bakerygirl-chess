@@ -1,13 +1,14 @@
 ﻿using UnityEngine;
 using UnityEngine.UI;
-using System.Collections.Generic;
 using BakeryGirl.Chess;
 
-public class StorageUI : MonoBehaviour {
-    public PlayerUI player0;
-    public PlayerUI player1;
+public class UIStorage : MonoBehaviour {
+    public UIPlayer player0;
+    public UIPlayer player1;
 
-    public PlayerUI NowPlayer {
+    public Text turnLebel;
+
+    public UIPlayer NowPlayer {
         get {
             if (m_turn == Unit.OwnerEnum.Black)
                 return player0;
@@ -47,7 +48,7 @@ public class StorageUI : MonoBehaviour {
         UpdateResourceNum(
             cache.descriptor.GetPlayerInfo(Unit.TypeEnum.Bread, Unit.OwnerEnum.Black),
             cache.descriptor.GetPlayerInfo(Unit.TypeEnum.Bread, Unit.OwnerEnum.White));
-        SwitchTurn(cache.descriptor.Turn);
+        SwitchTurn(cache.descriptor.Turn, cache.turnNum);
     }
 
     /// <summary>
@@ -64,13 +65,14 @@ public class StorageUI : MonoBehaviour {
     /// switch turn (black | white) to show speific shop info
     /// </summary>
     /// <param name="turn"></param>
-    public void SwitchTurn(Unit.OwnerEnum turn) {
+    public void SwitchTurn(Unit.OwnerEnum turn, int turnNum) {
         m_hasbuy = false;
         m_turn = turn;
         player0.IsMyTurn = turn == Unit.OwnerEnum.Black;
         player1.IsMyTurn = turn != Unit.OwnerEnum.Black;
         NowPlayer.endTurn.interactable = false;
         NowPlayer.cancel.interactable = false;
+        turnLebel.text = turnNum.ToString();
     }
 
     /// <summary>

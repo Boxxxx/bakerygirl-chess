@@ -139,9 +139,11 @@ public class Hint
 public class GameCache {
     public GameDescriptor descriptor;
     public LastMoveInfo lastMove;
+    public int turnNum;
 
-    public GameCache(Board board, Unit.OwnerEnum turn, LastMoveInfo lastMove) {
+    public GameCache(Board board, Unit.OwnerEnum turn, int turnNum, LastMoveInfo lastMove) {
         descriptor = new GameDescriptor(board, turn);
+        this.turnNum = turnNum;
         this.lastMove = lastMove;
     }
 }
@@ -189,10 +191,11 @@ public class Controller : MonoBehaviour
 
     private MoveState moveState;
     private Unit.OwnerEnum turn;
+    private int turnNum;
     private MainState state = MainState.Uninitialized;
     private int effectNum;
     private Board board;
-    private StorageUI storage;
+    private UIStorage storage;
     private Hint hint = new Hint();
     private Ruler.GameResult result;
     private LastMoveInfo lastMove;
@@ -284,6 +287,7 @@ public class Controller : MonoBehaviour
         lastMove = cache.lastMove;
         lastMoveHint.Focus(lastMove);
         turn = cache.descriptor.Turn;
+        turnNum = cache.turnNum;
         state = MainState.Move;
         moveState = MoveState.Idle;
     }
@@ -378,6 +382,7 @@ public class Controller : MonoBehaviour
         storage.NewGame();
         state = MainState.Ready;
         turn = Unit.OwnerEnum.Black;
+        turnNum = 0;
         if (resultSprite != null) {
             resultSprite.gameObject.SetActive(false);
         }
@@ -401,12 +406,13 @@ public class Controller : MonoBehaviour
     }
     private void NewTurn(bool initial)
     {
+        turnNum++;
         board.SwitchTurn(turn);
-        storage.SwitchTurn(turn);
+        storage.SwitchTurn(turn, turnNum);
         if (gameMode == GameMode.Agent) {
             AgentSwitchTurn(initial);
         }
-        cache = new GameCache(board, turn, lastMove);
+        cache = new GameCache(board, turn, turnNum, lastMove);
     }
     private void OnGameOver()
     {
@@ -623,11 +629,8 @@ public class Controller : MonoBehaviour
         }
         else
         {
-            RaycastHit hit;
-            if (board.collider.Raycast(GlobalInfo.Instance.mainCamera.ScreenPointToRay(Input.mousePosition), out hit, 1000f))
-            {
-                Vector3 point = hit.point;
-                
+            var point = GlobalInfo.Instance.mainCamera.ScreenToWorldPoint(Input.mousePosition);
+            if (board.gameObject.collider2D == Physics2D.OverlapPoint(point)) {
                 MouseEvent(point);
             }
         }

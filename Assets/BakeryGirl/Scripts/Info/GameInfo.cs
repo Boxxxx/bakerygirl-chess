@@ -27,7 +27,7 @@ public class GlobalInfo {
 	}
 
     public Board board;
-    public StorageUI storage;
+    public UIStorage storage;
     public Camera mainCamera;
     public Controller controller;
     public CharacterImageShowup characterImage;

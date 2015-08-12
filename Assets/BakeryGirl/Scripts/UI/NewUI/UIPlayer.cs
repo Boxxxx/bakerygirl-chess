@@ -2,7 +2,7 @@
 using UnityEngine.UI;
 using System.Collections;
 
-public class PlayerUI : MonoBehaviour {
+public class UIPlayer : MonoBehaviour {
     public Text numRestResource;
     public RectTransform pointCollectResource;
     public Button endTurn;
