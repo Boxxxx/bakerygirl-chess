@@ -1,18 +1,18 @@
 using UnityEngine;
 using System;
-using System.Collections;
 
-public class GlobalInfo {
-	
+public class GlobalInfo : MonoBehaviour {
 	// Singleton implement
-	private static GlobalInfo instance;
+	private static GlobalInfo m_instance;
 	protected GlobalInfo() {}
 	public static GlobalInfo Instance {
 	    get {
-		    if(instance == null)
-			    instance = new GlobalInfo();
+            if (m_instance == null) {
+                var obj = new GameObject("GlobalInfo", typeof(GlobalInfo));
+                m_instance = obj.GetComponent<GlobalInfo>();
+            }
 		
-		    return instance;
+		    return m_instance;
 	    }
     }
 	
@@ -31,6 +31,10 @@ public class GlobalInfo {
     public Camera mainCamera;
     public Controller controller;
     public CharacterImageShowup characterImage;
+
+    void Awake() {
+        m_instance = this;
+    }
 }
 
 public class BoardInfo
@@ -67,6 +71,8 @@ public class StorageInfo
                                                         new Vector3(0.50f, 0.005f, 0) };
     public static readonly Unit.TypeEnum[] CardTypeList = { Unit.TypeEnum.Scout, Unit.TypeEnum.Pioneer, Unit.TypeEnum.Boss, Unit.TypeEnum.Bomb };
     public static readonly int[] CardCost = { 1, 1, 2, 1 };
+
+    public static readonly Color Orange = new Color(1.0f, 0.4f, 0f);
 }
 
 public class UnitInfo : ICloneable  

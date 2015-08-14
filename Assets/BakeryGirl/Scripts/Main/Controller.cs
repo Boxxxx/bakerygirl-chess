@@ -114,8 +114,8 @@ public class Hint
         }
         else if (board.GetUnitOwner(tile.Pos) == Unit.Opposite(owner)) {
             tile.SetColor(1, 0, 0);
-            tile.CardActive = true;
             tile.setSprite("attack_hint");
+            tile.CardActive = true;
         }
         else {
             if (board.GetUnitType(tile.Pos) == Unit.TypeEnum.Bread) {
@@ -128,8 +128,8 @@ public class Hint
             else {
                 tile.SetColor(0, 1, 0);
             }
-            tile.CardActive = true;
             tile.setSprite("move_hint");
+            tile.CardActive = true;
             tile.transform.Rotate(new Vector3(0, 0, rotation));
         }
         return true;
@@ -181,14 +181,12 @@ public class Controller : MonoBehaviour
 
     #region Variables
     public GameMode initGameMode = GameMode.Normal;
-    public Button turnOverButton;
-    public ResultSprite resultSprite;
-    public UILogger logger;
-    private GameMode gameMode = GameMode.Normal;
+    public UIGameResult resultUI;
+    public UIStatus statusUI;
     public PlayerAgent agent;
     public LastMoveHint lastMoveHint;
-    //public string aiClassName = "";
 
+    private GameMode gameMode = GameMode.Normal;
     private MoveState moveState;
     private Unit.OwnerEnum turn;
     private int turnNum;
@@ -375,6 +373,7 @@ public class Controller : MonoBehaviour
         this.gameMode = gameMode;
 
         lastMove = null;
+        lastMoveHint.UnFocus();
         moveState = MoveState.Idle;
         ClearEffect();
         hint.ClearHints();
@@ -383,8 +382,8 @@ public class Controller : MonoBehaviour
         state = MainState.Ready;
         turn = Unit.OwnerEnum.Black;
         turnNum = 0;
-        if (resultSprite != null) {
-            resultSprite.gameObject.SetActive(false);
+        if (resultUI != null) {
+            resultUI.gameObject.SetActive(false);
         }
         storage.IsEndTurnValid = false;
         storage.IsCancelValid = false;
@@ -395,14 +394,12 @@ public class Controller : MonoBehaviour
         if (gameMode == GameMode.Agent) {
             InitAgent();
         }
-        if (logger != null) {
-            logger.Text = "";
-            logger.State = UILogger.StateEnum.Normal;
-        }
+        statusUI.ShowAction();
     }
     private void StartGame()
     {
         state = MainState.Move;
+        NewTurn(true);
     }
     private void NewTurn(bool initial)
     {
@@ -412,14 +409,17 @@ public class Controller : MonoBehaviour
         if (gameMode == GameMode.Agent) {
             AgentSwitchTurn(initial);
         }
+        else {
+            statusUI.ShowAction();
+        }
         cache = new GameCache(board, turn, turnNum, lastMove);
     }
     private void OnGameOver()
     {
         agent.OnGameOver(result);
-        if (resultSprite != null) {
-            resultSprite.gameObject.SetActive(true);
-            resultSprite.OnGameOver(result);
+        if (resultUI != null) {
+            resultUI.gameObject.SetActive(true);
+            resultUI.OnGameOver(storage.player0.playerName.text, storage.player1.playerName.text, turnNum, result);
         }
     }
     private bool CheckMoveOffset(Position offset)
@@ -554,10 +554,7 @@ public class Controller : MonoBehaviour
         {
             state = MainState.AgentThinking;
             agent.Think(board);
-            if (logger != null) {
-                logger.Text = agent.waitingText;
-                logger.State = UILogger.StateEnum.Dot;
-            }
+            statusUI.ShowDot(agent.waitingText);
         }
     }
     private bool DoAgentAction()
@@ -595,8 +592,6 @@ public class Controller : MonoBehaviour
 
         NewGame(initGameMode);
         StartGame();
-
-        NewTurn(true);
     }
 
     void Update()
@@ -608,10 +603,7 @@ public class Controller : MonoBehaviour
         {
             if (gameMode == GameMode.Agent) {
                 if (agent.State == PlayerAgent.StateEnum.Complete) {
-                    if (logger != null) {
-                        logger.Text = string.Format("花费时间 : {0}ms", agent.GetCostTime());
-                        logger.State = UILogger.StateEnum.Normal;
-                    }
+                    statusUI.ShowTimecost(agent.GetCostTime());
                     state = MainState.AgentRunning;
                 }
             }

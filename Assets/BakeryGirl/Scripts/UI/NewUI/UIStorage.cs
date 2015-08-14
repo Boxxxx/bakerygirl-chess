@@ -6,7 +6,7 @@ public class UIStorage : MonoBehaviour {
     public UIPlayer player0;
     public UIPlayer player1;
 
-    public Text turnLebel;
+    public UIStatus status;
 
     public UIPlayer NowPlayer {
         get {
@@ -72,7 +72,7 @@ public class UIStorage : MonoBehaviour {
         player1.IsMyTurn = turn != Unit.OwnerEnum.Black;
         NowPlayer.endTurn.interactable = false;
         NowPlayer.cancel.interactable = false;
-        turnLebel.text = turnNum.ToString();
+        status.SetTurn(turnNum);
     }
 
     /// <summary>

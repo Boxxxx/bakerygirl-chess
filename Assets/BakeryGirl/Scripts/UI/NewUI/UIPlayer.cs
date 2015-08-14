@@ -9,6 +9,7 @@ public class UIPlayer : MonoBehaviour {
     public Button cancel;
     public Image flag;
     public Image waitingMask;
+    public Text playerName;
     public Button[] cards;
 
     private int m_resource = 0;
@@ -30,8 +31,9 @@ public class UIPlayer : MonoBehaviour {
             m_isMyTurn = value;
             endTurn.interactable = value;
             cancel.interactable = value;
-            flag.gameObject.SetActive(value);
             waitingMask.gameObject.SetActive(!value);
+            flag.color = value ? StorageInfo.Orange : Color.black;
+            playerName.color = value ? StorageInfo.Orange : Color.black;
             foreach (var card in cards) {
                 card.interactable = value;
             }
