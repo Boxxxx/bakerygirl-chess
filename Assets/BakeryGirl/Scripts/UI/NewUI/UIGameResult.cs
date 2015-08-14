@@ -11,8 +11,12 @@ public class UIGameResult : MonoBehaviour {
     public Image player1Result;
     public Text turnNum;
 
+    public RectTransform infoPanel;
+
     public Sprite winSprite;
     public Sprite loseSprite;
+
+    public float moveInTime = 0.5f;
 
     public void OnGameOver(string player0, string player1, int turn, Ruler.GameResult result) {
         player0Name.text = player0;
@@ -38,5 +42,8 @@ public class UIGameResult : MonoBehaviour {
         player1Flag.color = player1Highlight ? StorageInfo.Orange : Color.white;
         player1Result.sprite = player1Highlight ? winSprite : loseSprite;
         player1Result.SetNativeSize();
+
+        infoPanel.localPosition = new Vector3(infoPanel.rect.width, 0, 0);
+        iTween.MoveTo(infoPanel.gameObject, iTween.Hash("position", Vector3.zero, "time", moveInTime, "easetype", iTween.EaseType.easeOutBounce, "islocal", true));
     }
 }
