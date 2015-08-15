@@ -120,7 +120,7 @@ public class UINetwork : MonoBehaviour {
             case NetworkState.GamePlay:
                 matchPanel.gameObject.SetActive(false);
                 exitButton.gameObject.SetActive(false);
-                infoLabel.text = "匹配成功，准备开始战斗...";
+                infoLabel.text = "准备开战...";
                 Invoke("EnterGame", kEnterGameDelay);
                 break;
         }

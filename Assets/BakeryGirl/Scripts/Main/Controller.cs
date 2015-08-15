@@ -183,6 +183,7 @@ public class Controller : MonoBehaviour
     public GameMode initGameMode = GameMode.Normal;
     public UIGameResult resultUI;
     public UIStatus statusUI;
+    public UIBattleStart battleStartUI;
     [HideInInspector]
     public PlayerAgent agent;
     public LastMoveHint lastMoveHint;
@@ -401,6 +402,9 @@ public class Controller : MonoBehaviour
     {
         state = MainState.Move;
         NewTurn(true);
+        if (battleStartUI != null) {
+            battleStartUI.Show();
+        }
     }
     private void NewTurn(bool initial)
     {
