@@ -65,6 +65,12 @@ namespace BakeryGirl.Chess {
                 return Info == null ? null : LocalPlayer.GetNextFor(Info.playerIdToMakeThisTurn);
             }
         }
+        public string MyUsername {
+            get { return Me.Name; }
+        }
+        public string OpponentUsername {
+            get { return Opponent.Name; }
+        }
 
         public bool IsPlayerTurn {
             get { return Info == null ? false : Info.playerIdToMakeThisTurn == LocalPlayer.ID; }
@@ -230,15 +236,24 @@ namespace BakeryGirl.Chess {
         #endregion
 
         #region Public Interfaces
-        public void ConnectWithNameAndRegion(string playerName, string region) {
+        public void ConnectToCloud(string playerName, string region) {
             Clear();
 
             if (IsConnected) {
                 Disconnect();
             }
             PlayerName = playerName;
-            Connect("120.24.99.31:5055", "Lite", "", "", new AuthenticationValues());
-            //ConnectToRegionMaster(region);
+            ConnectToRegionMaster(region);
+        }
+
+        public void ConnectToCustomServer(string playerName, string ip) {
+            Clear();
+
+            if (IsConnected) {
+                Disconnect();
+            }
+            PlayerName = playerName;
+            Connect(ip, "Lite", "", "", new AuthenticationValues());
         }
 
         public void JoinRandomRoom(string pwd = "") {

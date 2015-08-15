@@ -6,14 +6,14 @@ namespace BakeryGirl.Chess {
         private static GameClientAgent _instance = null;
         public static GameClientAgent Instance {
             get {
-                if (_instance == null) {
-                    _instance = GameObject.FindObjectOfType<GameClientAgent>();
-                    if (_instance == null) {
-                        var obj = new GameObject();
-                        obj.name = "GameClient";
-                        _instance = obj.AddComponent<GameClientAgent>();
-                    }
-                }
+                //if (_instance == null) {
+                //    _instance = GameObject.FindObjectOfType<GameClientAgent>();
+                //    if (_instance == null) {
+                //        var obj = new GameObject();
+                //        obj.name = "GameClient";
+                //        _instance = obj.AddComponent<GameClientAgent>();
+                //    }
+                //}
                 return _instance;
             }
         }
@@ -21,29 +21,60 @@ namespace BakeryGirl.Chess {
             get { return Instance.Client; }
         }
 
-        public string appId = string.Empty;
         public string appVersion = "v1.0.0";
+        public string appId = string.Empty;
+        public bool useCloud = false;
         public string region = "EU";
+        public string customServerIp = "120.24.99.31:5055";
+
+        public bool logOnScreen = true;
 
         public GameClient Client {
             get;
             private set;
         }
         public override Unit.OwnerEnum MyTurn {
-            get {
-                return Client.MyTurn;
-            }
+            get { return Client.MyTurn; }
+        }
+        public string MyUsername {
+            get { return Client.MyUsername; }
+        }
+        public string OpponentUsername {
+            get { return Client.OpponentUsername; }
         }
 
         #region Unity Callbacks
         void Awake() {
+            _instance = null;
+            if (_instance == null) {
+                _instance = this;
+                DontDestroyOnLoad(gameObject);
+            }
+            else {
+                if (_instance != this) {
+                    Destroy(gameObject);
+                    return;
+                }
+            }
+
             Client = new GameClient();
             Client.AppId = appId;
             Client.AppVersion = appVersion;
             Client.onReceiveMove += OnReceiveMove;
         }
 
+        void OnLevelWasLoaded() {
+            if (GlobalInfo.Instance != null && GlobalInfo.Instance.storage != null) {
+                GlobalInfo.Instance.storage.player0.Username = MyTurn == Unit.OwnerEnum.Black ? MyUsername : OpponentUsername;
+                GlobalInfo.Instance.storage.player0.Username = MyTurn == Unit.OwnerEnum.White ? MyUsername : OpponentUsername;
+            }
+        }
+
         void OnGUI() {
+            if (!logOnScreen) {
+                return;
+            }
+
             GUI.skin.button.stretchWidth = true;
             GUI.skin.button.fixedWidth = 0;
 
@@ -71,8 +102,13 @@ namespace BakeryGirl.Chess {
         #endregion
 
         #region Public Interfaces
-        public void JoinGame(string nickname) {
-            Client.ConnectWithNameAndRegion(nickname, region);
+        public void JoinGame(string username) {
+            if (useCloud) {
+                Client.ConnectToCloud(username, region);
+            }
+            else {
+                Client.ConnectToCustomServer(username, customServerIp);
+            }
         }
         #endregion
 

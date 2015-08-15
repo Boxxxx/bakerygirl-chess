@@ -23,6 +23,13 @@ public class UIPlayer : MonoBehaviour {
         }
     }
 
+    public string Username {
+        get { return playerName.text; }
+        set {
+            playerName.text = value;
+        }
+    }
+
     public bool IsMyTurn {
         get {
             return m_isMyTurn;

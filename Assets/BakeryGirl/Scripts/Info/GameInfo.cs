@@ -15,9 +15,15 @@ public class GlobalInfo : MonoBehaviour {
 		    return m_instance;
 	    }
     }
-	
-	// Global Info
-	public int GameWidth
+
+    // Static Info
+    public const string kMainScene = "newui";
+    public const string kNetworkEntryScene = "network-entry";
+    public const string kMultiplayerSceneSide0 = "multiplayer-side0";
+    public const string kMultiplayerSceneSide1 = "multiplayer-side0";
+
+    // Global Info
+    public int GameWidth
 	{
 		get {return 1240;}
 	}

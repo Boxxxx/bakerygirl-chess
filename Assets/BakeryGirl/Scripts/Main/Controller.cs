@@ -183,6 +183,7 @@ public class Controller : MonoBehaviour
     public GameMode initGameMode = GameMode.Normal;
     public UIGameResult resultUI;
     public UIStatus statusUI;
+    [HideInInspector]
     public PlayerAgent agent;
     public LastMoveHint lastMoveHint;
 
@@ -589,6 +590,9 @@ public class Controller : MonoBehaviour
     {
         board = GlobalInfo.Instance.board;
         storage = GlobalInfo.Instance.storage;
+        if (agent == null) {
+            agent = GameObject.FindObjectOfType<PlayerAgent>();
+        }
 
         NewGame(initGameMode);
         StartGame();
