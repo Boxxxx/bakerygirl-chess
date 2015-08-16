@@ -9,13 +9,13 @@ public class UICard : MonoBehaviour {
 
 	public void OnHover() {
         if (m_button.interactable) {
-            GlobalInfo.Instance.storage.EnterUICard(index);
+            GameInfo.Instance.storage.EnterUICard(index);
         }
     }
 
     public void OnClick() {
         if (m_button.interactable) {
-            GlobalInfo.Instance.storage.ClickCard(index);
+            GameInfo.Instance.storage.ClickCard(index);
         }
     }
 

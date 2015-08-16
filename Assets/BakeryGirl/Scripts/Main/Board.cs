@@ -22,7 +22,6 @@ public class Board : BaseBehavior
     #endregion
 
     public GameObject unitPrefab;
-    public Dictionary<string, Card> cardGraphics;
 
     #region Variables
     // board data
@@ -211,8 +210,8 @@ public class Board : BaseBehavior
             playerInfo[(int)owner][type] += delta;
 
         if(type == Unit.TypeEnum.Bread)
-            GlobalInfo.Instance.storage.UpdateResourceNum(GlobalInfo.Instance.board.GetPlayerInfo(Unit.TypeEnum.Bread, Unit.OwnerEnum.Black),
-                                      GlobalInfo.Instance.board.GetPlayerInfo(Unit.TypeEnum.Bread, Unit.OwnerEnum.White));
+            GameInfo.Instance.storage.UpdateResourceNum(GameInfo.Instance.board.GetPlayerInfo(Unit.TypeEnum.Bread, Unit.OwnerEnum.Black),
+                                      GameInfo.Instance.board.GetPlayerInfo(Unit.TypeEnum.Bread, Unit.OwnerEnum.White));
 
         return playerInfo[(int)owner][type];
     }
@@ -362,15 +361,6 @@ public class Board : BaseBehavior
         return boardSummary;
     }
 
-    public Card GetCardGraphics(Unit.TypeEnum type, Unit.OwnerEnum owner) {
-        string spriteName = GetCardName(type, owner);
-        return cardGraphics.ContainsKey(spriteName) ? cardGraphics[spriteName] : null;
-    }
-
-    public Card GetCardGraphicsByName(string name) {
-        return cardGraphics.ContainsKey(name) ? cardGraphics[name] : null;
-    }
-
     public static string GetCardName(Unit.TypeEnum type, Unit.OwnerEnum owner) {
         string spriteName;
         if (type == Unit.TypeEnum.Bread)
@@ -388,8 +378,6 @@ public class Board : BaseBehavior
     #region Unity Callback Function
     protected override void Awake() {
         base.Awake();
-        GlobalInfo.Instance.mainCamera = GameObject.Find("MainCamera").GetComponent<Camera>();
-        GlobalInfo.Instance.board = this;
 	}
 	
 	void Start () {

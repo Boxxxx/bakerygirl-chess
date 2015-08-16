@@ -113,7 +113,7 @@ public abstract class AIPlayer : PlayerAgent
     {
         get { return action; }
     }
-    public override Unit.OwnerEnum MyTurn { get { return myTurn; } }
+    public override Unit.OwnerEnum PlayerTurn { get { return myTurn; } }
     public int Node
     {
         get { return nodeCount; }
@@ -141,7 +141,7 @@ public abstract class AIPlayer : PlayerAgent
     }
     public override bool SwitchTurn(Unit.OwnerEnum nowTurn, bool initial)
     {
-        return MyTurn == nowTurn;
+        return PlayerTurn == nowTurn;
     }
     #endregion
 
@@ -160,6 +160,12 @@ public abstract class AIPlayer : PlayerAgent
     #endregion
 
     #region Unity Callback Functions
+    void Awake() {
+        if (FindObjectOfType<PlayerAgent>() != null) {
+            Destroy(gameObject);
+        }
+    }
+
     void Update()
     {
         if (State == StateEnum.Thinking && !aiTask.IsAlive)

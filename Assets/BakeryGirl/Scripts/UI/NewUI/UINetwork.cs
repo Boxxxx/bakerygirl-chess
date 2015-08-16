@@ -69,12 +69,7 @@ public class UINetwork : MonoBehaviour {
     }
 
     void EnterGame() {
-        if (GameClientAgent.Instance.MyTurn == Unit.OwnerEnum.Black) {
-            ReloadLevel(GlobalInfo.kMultiplayerSceneSide0, false);
-        }
-        else {
-            ReloadLevel(GlobalInfo.kMultiplayerSceneSide1, false);
-        }
+        ReloadLevel(GameInfo.kMultiplayerScene, false);
     }
     #endregion
 
@@ -92,10 +87,10 @@ public class UINetwork : MonoBehaviour {
 
     public void OnExit() {
         if (CurrentState == NetworkState.MainEntry) {
-            ReloadLevel(GlobalInfo.kMainScene, true);
+            ReloadLevel(GameInfo.kMainScene, true);
         }
         else {
-            ReloadLevel(GlobalInfo.kNetworkEntryScene, true);
+            ReloadLevel(GameInfo.kNetworkEntryScene, true);
         }
     }
 
@@ -132,7 +127,7 @@ public class UINetwork : MonoBehaviour {
         }
         UIErrorPrompt.Show("Disonnected.", () => {
             Debug.Log("disconnected, cause: " + disconnectCause);
-            ReloadLevel(GlobalInfo.kNetworkEntryScene, true);
+            ReloadLevel(GameInfo.kNetworkEntryScene, true);
         });
     }
 
@@ -156,7 +151,7 @@ public class UINetwork : MonoBehaviour {
 
     void OnCloseRoom() {
         UIErrorPrompt.Show("Player has left.", () => {
-            ReloadLevel(GlobalInfo.kNetworkEntryScene, true);
+            ReloadLevel(GameInfo.kNetworkEntryScene, true);
         });
     }
 
@@ -170,7 +165,7 @@ public class UINetwork : MonoBehaviour {
             case Consts.ErrorCode.NotCompatible:
                 Debug.Log("game data not compatible");
                 UIErrorPrompt.Show("Game data not compatible.", () => {
-                    ReloadLevel(GlobalInfo.kNetworkEntryScene, true);
+                    ReloadLevel(GameInfo.kNetworkEntryScene, true);
                 });
                 break;
         }
@@ -199,7 +194,7 @@ public class UINetwork : MonoBehaviour {
             if (PassTime > timeLimit) {
                 _state = NetworkState.Timeout;
                 UIErrorPrompt.Show("Timeout.", () => {
-                    ReloadLevel(GlobalInfo.kNetworkEntryScene, true);
+                    ReloadLevel(GameInfo.kNetworkEntryScene, true);
                 });
             }
         }

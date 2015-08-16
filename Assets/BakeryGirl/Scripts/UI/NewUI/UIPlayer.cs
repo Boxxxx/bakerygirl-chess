@@ -13,6 +13,7 @@ public class UIPlayer : MonoBehaviour {
     public Button[] cards;
 
     private int m_resource = 0;
+    private Unit.OwnerEnum m_ownerType = Unit.OwnerEnum.None;
     private bool m_isMyTurn = false;
 
     public int Resource {
@@ -44,6 +45,25 @@ public class UIPlayer : MonoBehaviour {
             foreach (var card in cards) {
                 card.interactable = value;
             }
+        }
+    }
+
+    public void NewGame(Unit.OwnerEnum owner) {
+        m_ownerType = owner;
+
+        Resource = 0;
+        playerName.text = 
+            owner == Unit.OwnerEnum.Black 
+            ? GameInfo.Instance.blackPlayerName 
+            : GameInfo.Instance.whitePlayerName;
+
+        flag.sprite = ArtManager.Instance.GetFlagSprite(owner);
+        flag.SetNativeSize();
+
+        for (int i = 0; i < cards.Length; i++) {
+            var image = cards[i].GetComponent<Image>();
+            image.sprite = ArtManager.Instance.GetStorageCardSprite(StorageInfo.CardTypeList[i], owner);
+            image.SetNativeSize();
         }
     }
 }

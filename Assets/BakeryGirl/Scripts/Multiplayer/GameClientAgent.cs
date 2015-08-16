@@ -33,7 +33,7 @@ namespace BakeryGirl.Chess {
             get;
             private set;
         }
-        public override Unit.OwnerEnum MyTurn {
+        public override Unit.OwnerEnum PlayerTurn {
             get { return Client.MyTurn; }
         }
         public string MyUsername {
@@ -63,13 +63,6 @@ namespace BakeryGirl.Chess {
             Client.onReceiveMove += OnReceiveMove;
         }
 
-        void OnLevelWasLoaded() {
-            if (GlobalInfo.Instance != null && GlobalInfo.Instance.storage != null) {
-                GlobalInfo.Instance.storage.player0.Username = MyTurn == Unit.OwnerEnum.Black ? MyUsername : OpponentUsername;
-                GlobalInfo.Instance.storage.player0.Username = MyTurn == Unit.OwnerEnum.White ? MyUsername : OpponentUsername;
-            }
-        }
-
         void OnGUI() {
             if (!logOnScreen) {
                 return;
@@ -91,17 +84,20 @@ namespace BakeryGirl.Chess {
         }
 
         void OnDestroy() {
-            if (Client != null && Client.loadBalancingPeer != null)
-            {
-                Client.Disconnect();
-                Client.loadBalancingPeer.StopThread();
-            }
-            Client = null;
+            DestroyClient();
         }
 
+        void OnApplicationQuit() {
+            DestroyClient();
+        }
+
+        public override void OnSceneExit() {
+            Destroy(gameObject);
+            _instance = null;
+        }
         #endregion
 
-        #region Public Interfaces
+        #region Public & Private Interfaces
         public void JoinGame(string username) {
             if (useCloud) {
                 Client.ConnectToCloud(username, region);
@@ -109,6 +105,14 @@ namespace BakeryGirl.Chess {
             else {
                 Client.ConnectToCustomServer(username, customServerIp);
             }
+        }
+
+        private void DestroyClient() {
+            if (Client != null && Client.loadBalancingPeer != null) {
+                Client.Disconnect();
+                Client.loadBalancingPeer.StopThread();
+            }
+            Client = null;
         }
         #endregion
 
@@ -123,6 +127,8 @@ namespace BakeryGirl.Chess {
         public override void Initialize()
         {
             base.Initialize();
+            GameInfo.Instance.blackPlayerName = PlayerTurn == Unit.OwnerEnum.Black ? MyUsername : OpponentUsername;
+            GameInfo.Instance.whitePlayerName = PlayerTurn == Unit.OwnerEnum.White ? MyUsername : OpponentUsername;
         }
         public override void Think(Board board, Action<PlayerAction[], float> complete = null)
         {

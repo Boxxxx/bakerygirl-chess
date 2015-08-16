@@ -123,7 +123,7 @@ namespace BakeryGirl.Chess {
     public abstract class PlayerAgent : MonoBehaviour {
         public enum StateEnum { Idle, Thinking, Complete };
         public StateEnum State { get { return _state; } }
-        public abstract Unit.OwnerEnum MyTurn { get; }
+        public abstract Unit.OwnerEnum PlayerTurn { get; }
 
         public string waitingText = "思考中";
 
@@ -177,5 +177,6 @@ namespace BakeryGirl.Chess {
         public virtual void OnGameOver(Ruler.GameResult result) {
             Debug.Log("Game Over, result is " + result);
         }
+        public virtual void OnSceneExit() { }
     }
 }

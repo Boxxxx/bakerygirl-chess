@@ -382,7 +382,6 @@ namespace BakeryGirl.Chess {
                 }
             }
         }
-
         
         private void SaveGameToProperties() {
             Hashtable hashtable = new Hashtable();
@@ -400,16 +399,16 @@ namespace BakeryGirl.Chess {
         }
 
         private void SaveBoardToProperties(Hashtable hashtable) {
-            if (GlobalInfo.Instance.controller == null || !GlobalInfo.Instance.controller.IsStart) {
+            if (global::GameInfo.Instance == null || !global::GameInfo.Instance.controller.IsStart) {
                 return;
             }
-            var board = GlobalInfo.Instance.board == null ? null : GlobalInfo.Instance.board.GenerateBoardSummary();
+            var board = global::GameInfo.Instance.board == null ? null : global::GameInfo.Instance.board.GenerateBoardSummary();
             if (board == null) {
                 return;
             }
 
             // only push my own resource num
-            int resource = GlobalInfo.Instance.storage.GetResourceNum(MyTurn);
+            int resource = global::GameInfo.Instance.storage.GetResourceNum(MyTurn);
             hashtable.Add(Consts.PropNames.GetPlayerResourceKey(LocalPlayer.ID), resource);
 
             for (int i = 0; i < BoardInfo.Row; i++) {
@@ -438,10 +437,10 @@ namespace BakeryGirl.Chess {
         }
 
         private bool VerifyBoardFromProperties(Hashtable hashtable) {
-            if (GlobalInfo.Instance.controller == null || !GlobalInfo.Instance.controller.IsStart) {
+            if (global::GameInfo.Instance.controller == null || !global::GameInfo.Instance.controller.IsStart) {
                 return true;
             }
-            var board = GlobalInfo.Instance.board == null ? null : GlobalInfo.Instance.board.GenerateBoardSummary();
+            var board = global::GameInfo.Instance.board == null ? null : global::GameInfo.Instance.board.GenerateBoardSummary();
             if (board == null) {
                 return true;
             }
@@ -452,9 +451,9 @@ namespace BakeryGirl.Chess {
             var resourceKey = Consts.PropNames.GetPlayerResourceKey(Opponent.ID);
             if (hashtable.ContainsKey(resourceKey)) {
                 int resource = (int)hashtable[resourceKey];
-                if (resource != GlobalInfo.Instance.storage.GetResourceNum(OpponentTurn)) {
+                if (resource != global::GameInfo.Instance.storage.GetResourceNum(OpponentTurn)) {
                     Debug.LogWarning(string.Format("[GameClient] resource unmatch, the local is {0}, remote is {1}.",
-                        GlobalInfo.Instance.storage.GetResourceNum(OpponentTurn), resource));
+                        global::GameInfo.Instance.storage.GetResourceNum(OpponentTurn), resource));
                     return false;
                 }
             }

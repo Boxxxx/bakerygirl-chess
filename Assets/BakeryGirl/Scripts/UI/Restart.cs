@@ -11,6 +11,6 @@ public class Restart : MonoBehaviour {
 
     void OnClick()
     {
-        GlobalInfo.Instance.controller.RestartGame(Controller.GameMode.Stay);
+        GameInfo.Instance.controller.RestartGame(Controller.GameMode.Stay);
     }
 }

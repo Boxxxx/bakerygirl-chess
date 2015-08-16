@@ -31,7 +31,7 @@ public class DragEvent
         this.source = source;
         source.Sprite.color = new Color(source.Sprite.color.r, source.Sprite.color.g, source.Sprite.color.b, 0.1f);
 
-        unit.setSprite(GlobalInfo.Instance.board.GetCardGraphics(source.Type, source.Owner));
+        unit.setSprite(ArtManager.Instance.GetBattleCardGraphics(source.Type, source.Owner));
         unit.transform.position = point;
         this.unit.gameObject.SetActive(true);
     }
@@ -79,9 +79,9 @@ public class Hint
         {
             var offset = Controller.MoveOffsetList[i];
             Position newPos = source.Pos+offset;
-            if (newPos.IsValid && GlobalInfo.Instance.board.GetUnitOwner(newPos) != owner)
+            if (newPos.IsValid && GameInfo.Instance.board.GetUnitOwner(newPos) != owner)
             {
-                Unit unit = GlobalInfo.Instance.board.InstantiateUnit(new UnitInfo(source.Pos + offset, Unit.TypeEnum.Tile));
+                Unit unit = GameInfo.Instance.board.InstantiateUnit(new UnitInfo(source.Pos + offset, Unit.TypeEnum.Tile));
                 SetHintStyle(unit, MoveHintRotationList[i]);
                 units.Add(unit);
             }
@@ -108,7 +108,10 @@ public class Hint
 
     private bool SetHintStyle(Unit tile, float rotation)
     {
-        Board board = GlobalInfo.Instance.board;
+        Board board = GameInfo.Instance.board;
+        if (GameInfo.Instance.ShouldUpsidedown) {
+            rotation += 180.0f;
+        }
         if (board.GetUnitOwner(tile.Pos) == owner) {
             return false;
         }
@@ -184,8 +187,6 @@ public class Controller : MonoBehaviour
     public UIGameResult resultUI;
     public UIStatus statusUI;
     public UIBattleStart battleStartUI;
-    [HideInInspector]
-    public PlayerAgent agent;
     public LastMoveHint lastMoveHint;
 
     private GameMode gameMode = GameMode.Normal;
@@ -239,6 +240,9 @@ public class Controller : MonoBehaviour
         get {
             return moveState == MoveState.Pick;
         }
+    }
+    public PlayerAgent Agent {
+        get; private set;
     }
 
     public GameClient Client {
@@ -346,7 +350,7 @@ public class Controller : MonoBehaviour
     {
         bread.Owner = owner;
         // set 
-        bread.setSprite(GlobalInfo.Instance.board.GetCardGraphicsByName("bread"));
+        bread.setSprite(ArtManager.Instance.GetBattleCardGraphicsByName("bread"));
         iTween.MoveAdd(bread.gameObject, iTween.Hash("amount", new Vector3(0, BoardInfo.GridHeight, 0), "time", 0.5f, "easetype", iTween.EaseType.easeOutCubic,"oncomplete", (iTween.CallbackDelegate)(tween => {
             iTween.MoveTo(bread.gameObject, iTween.Hash("position", storage.GetCollectPoint(owner), "time", 1f, "oncomplete", "OnDisappearComplete", "oncompletetarget", bread.gameObject));
         })));
@@ -373,12 +377,18 @@ public class Controller : MonoBehaviour
     private void NewGame(GameMode gameMode)
     {
         this.gameMode = gameMode;
+        GameInfo.Instance.NewGame();
 
         lastMove = null;
         lastMoveHint.UnFocus();
         moveState = MoveState.Idle;
         ClearEffect();
         hint.ClearHints();
+
+        if (gameMode == GameMode.Agent) {
+            InitAgent();
+        }
+
         board.NewGame();
         storage.NewGame();
         state = MainState.Ready;
@@ -393,9 +403,6 @@ public class Controller : MonoBehaviour
         _actionLogs.Clear();
         _actionsCurrentTurn.Clear();
 
-        if (gameMode == GameMode.Agent) {
-            InitAgent();
-        }
         statusUI.ShowAction();
     }
     private void StartGame()
@@ -421,10 +428,10 @@ public class Controller : MonoBehaviour
     }
     private void OnGameOver()
     {
-        agent.OnGameOver(result);
+        Agent.OnGameOver(result);
         if (resultUI != null) {
             resultUI.gameObject.SetActive(true);
-            resultUI.OnGameOver(storage.player0.playerName.text, storage.player1.playerName.text, turnNum, result);
+            resultUI.OnGameOver(storage, turnNum, result);
         }
     }
     private bool CheckMoveOffset(Position offset)
@@ -471,7 +478,7 @@ public class Controller : MonoBehaviour
         if (!IsMoving && pos.IsValid) {
             var unit = board.GetUnit(pos, false);
             if (unit != null) {
-                GlobalInfo.Instance.characterImage.Show(unit.GetCardName());
+                GameInfo.Instance.characterImage.Show(unit.GetCardName());
             }
         }
     }
@@ -506,9 +513,9 @@ public class Controller : MonoBehaviour
         _actionsCurrentTurn.Clear();
 
         _actionLogs.Add(actions);
-        if (agent != null)
+        if (Agent != null)
         {
-            agent.OnMove(state == MainState.AgentThinking || state == MainState.AgentRunning || state == MainState.AgentEffectWaiting, actions);
+            Agent.OnMove(state == MainState.AgentThinking || state == MainState.AgentRunning || state == MainState.AgentEffectWaiting, actions);
         }
 
         return true;
@@ -544,27 +551,27 @@ public class Controller : MonoBehaviour
     }
     private bool _DoBuy(Unit.TypeEnum type)
     {
-        return GlobalInfo.Instance.storage.BuyCard(type, turn);
+        return GameInfo.Instance.storage.BuyCard(type, turn);
     }
     #endregion
 
     #region Agent Functions
     private void InitAgent()
     {
-        agent.Initialize();
+        Agent.Initialize();
     }
     private void AgentSwitchTurn(bool initial)
     {
-        if(agent.SwitchTurn(turn, initial))
+        if(Agent.SwitchTurn(turn, initial))
         {
             state = MainState.AgentThinking;
-            agent.Think(board);
-            statusUI.ShowDot(agent.waitingText);
+            Agent.Think(board);
+            statusUI.ShowDot(Agent.waitingText);
         }
     }
     private bool DoAgentAction()
     {
-        PlayerAction action = agent.NextAction();
+        PlayerAction action = Agent.NextAction();
         DoAction(action);
         return action.type == PlayerAction.Type.Complete;
     }
@@ -586,16 +593,15 @@ public class Controller : MonoBehaviour
     #region Unity Callback Functions
     void Awake()
     {
-        GlobalInfo.Instance.controller = this;
         gameMode = initGameMode;
     }
 
     void Start()
     {
-        board = GlobalInfo.Instance.board;
-        storage = GlobalInfo.Instance.storage;
-        if (agent == null) {
-            agent = GameObject.FindObjectOfType<PlayerAgent>();
+        board = GameInfo.Instance.board;
+        storage = GameInfo.Instance.storage;
+        if (Agent == null) {
+            Agent = GameObject.FindObjectOfType<PlayerAgent>();
         }
 
         NewGame(initGameMode);
@@ -610,8 +616,8 @@ public class Controller : MonoBehaviour
         if (state == MainState.AgentThinking)
         {
             if (gameMode == GameMode.Agent) {
-                if (agent.State == PlayerAgent.StateEnum.Complete) {
-                    statusUI.ShowTimecost(agent.GetCostTime());
+                if (Agent.State == PlayerAgent.StateEnum.Complete) {
+                    statusUI.ShowTimecost(Agent.GetCostTime());
                     state = MainState.AgentRunning;
                 }
             }
@@ -629,7 +635,7 @@ public class Controller : MonoBehaviour
         }
         else
         {
-            var point = GlobalInfo.Instance.mainCamera.ScreenToWorldPoint(Input.mousePosition);
+            var point = GameInfo.Instance.mainCamera.ScreenToWorldPoint(Input.mousePosition);
             if (board.gameObject.collider2D == Physics2D.OverlapPoint(point)) {
                 MouseEvent(point);
             }
@@ -658,6 +664,10 @@ public class Controller : MonoBehaviour
         //{
         //    NextTurn();
         //}
+    }
+
+    void OnDestroy() {
+        Agent.OnSceneExit();
     }
     #endregion
 }

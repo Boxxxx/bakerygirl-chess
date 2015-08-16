@@ -3,17 +3,26 @@ using UnityEngine.UI;
 using BakeryGirl.Chess;
 
 public class UIStorage : MonoBehaviour {
-    public UIPlayer player0;
-    public UIPlayer player1;
+    public UIPlayer playerDown;
+    public UIPlayer playerUp;
 
     public UIStatus status;
+
+    public UIPlayer PlayerBlack {
+        get;
+        private set;
+    }
+    public UIPlayer PlayerWhite {
+        get;
+        private set;
+    }
 
     public UIPlayer NowPlayer {
         get {
             if (m_turn == Unit.OwnerEnum.Black)
-                return player0;
+                return PlayerBlack;
             else
-                return player1;
+                return PlayerWhite;
         }
     }
 
@@ -36,8 +45,11 @@ public class UIStorage : MonoBehaviour {
     /// Call by Controller, to initialize and start new game
     /// </summary>
     public void NewGame() {
-        player0.Resource = 0;
-        player1.Resource = 0;
+        PlayerBlack = GameInfo.Instance.ShouldUpsidedown ? playerUp : playerDown;
+        PlayerWhite = GameInfo.Instance.ShouldUpsidedown ? playerDown : playerUp;
+
+        PlayerBlack.NewGame(Unit.OwnerEnum.Black);
+        PlayerWhite.NewGame(Unit.OwnerEnum.White);
     }
 
     /// <summary>
@@ -56,9 +68,9 @@ public class UIStorage : MonoBehaviour {
     /// </summary>
     /// <param name="white">white's resource num</param>
     /// <param name="black">black's resource num</param>
-    public void UpdateResourceNum(int white, int black) {
-        player0.Resource = white;
-        player1.Resource = black;
+    public void UpdateResourceNum(int black, int white) {
+        PlayerWhite.Resource = white;
+        PlayerBlack.Resource = black;
     }
 
     /// <summary>
@@ -68,8 +80,8 @@ public class UIStorage : MonoBehaviour {
     public void SwitchTurn(Unit.OwnerEnum turn, int turnNum) {
         m_hasbuy = false;
         m_turn = turn;
-        player0.IsMyTurn = turn == Unit.OwnerEnum.Black;
-        player1.IsMyTurn = turn != Unit.OwnerEnum.Black;
+        PlayerBlack.IsMyTurn = turn == Unit.OwnerEnum.Black;
+        PlayerWhite.IsMyTurn = turn != Unit.OwnerEnum.Black;
         NowPlayer.endTurn.interactable = false;
         NowPlayer.cancel.interactable = false;
         status.SetTurn(turnNum);
@@ -82,15 +94,15 @@ public class UIStorage : MonoBehaviour {
     /// <param name="owner"></param>
     /// <returns></returns>
     public bool BuyCard(Unit.TypeEnum type, Unit.OwnerEnum owner) {
-        Unit newCard = GlobalInfo.Instance.board.InstantiateUnit(new UnitInfo(BoardInfo.Base[(int)m_turn], type, owner));
+        Unit newCard = GameInfo.Instance.board.InstantiateUnit(new UnitInfo(BoardInfo.Base[(int)m_turn], type, owner));
         Transform card = NowPlayer.cards[TypeToIndex(type)].transform;
         newCard.transform.position = UI2WorldPosition(card.transform.position);
 
         m_hasbuy = true;
 
         newCard.Owner = owner;
-        GlobalInfo.Instance.board.ModifyPlayerInfo(Unit.TypeEnum.Bread, m_turn, -StorageInfo.CardCost[TypeToIndex(newCard.Type)]);
-        GlobalInfo.Instance.controller.BuyCardEffect(newCard, owner);
+        GameInfo.Instance.board.ModifyPlayerInfo(Unit.TypeEnum.Bread, m_turn, -StorageInfo.CardCost[TypeToIndex(newCard.Type)]);
+        GameInfo.Instance.controller.BuyCardEffect(newCard, owner);
 
         return true;
     }
@@ -108,30 +120,30 @@ public class UIStorage : MonoBehaviour {
     /// Get the resource num of both players.
     /// </summary>
     public int[] GetResourceNum() {
-        return new int[] { player0.Resource, player1.Resource };
+        return new int[] { PlayerBlack.Resource, PlayerWhite.Resource };
     }
     public int GetResourceNum(Unit.OwnerEnum owner) {
         if (owner == Unit.OwnerEnum.Black) {
-            return player0.Resource;
+            return PlayerBlack.Resource;
         }
         else {
-            return player1.Resource;
+            return PlayerWhite.Resource;
         }
     }
 
     public void ClickCard(int num) {
-        if (GlobalInfo.Instance.controller.Phase == Controller.PhaseState.Player) {
+        if (GameInfo.Instance.controller.Phase == Controller.PhaseState.Player) {
             Unit.TypeEnum type = StorageInfo.CardTypeList[num];
             if (CanBuy(type)) {
-                GlobalInfo.Instance.controller.DoAction(PlayerAction.CreateBuy(type));
+                GameInfo.Instance.controller.DoAction(PlayerAction.CreateBuy(type));
             }
         }
     }
 
     public void EnterUICard(int index) {
-        if (GlobalInfo.Instance.controller.Phase == Controller.PhaseState.Player) {
+        if (GameInfo.Instance.controller.Phase == Controller.PhaseState.Player) {
             Unit.TypeEnum type = StorageInfo.CardTypeList[index];
-            GlobalInfo.Instance.characterImage.Show(Board.GetCardName(type, m_turn));
+            GameInfo.Instance.characterImage.Show(ArtManager.GetCardName(type, m_turn));
         }
     }
     #endregion
@@ -147,11 +159,11 @@ public class UIStorage : MonoBehaviour {
             return false;
         if (NowPlayer.Resource < StorageInfo.CardCost[TypeToIndex(type)])
             return false;
-        if (GlobalInfo.Instance.board.GetUnitOwner(BoardInfo.Base[(int)m_turn]) != Unit.OwnerEnum.None)
+        if (GameInfo.Instance.board.GetUnitOwner(BoardInfo.Base[(int)m_turn]) != Unit.OwnerEnum.None)
             return false;
-        if (type == Unit.TypeEnum.Boss && GlobalInfo.Instance.board.GetPlayerInfo(Unit.TypeEnum.Boss, m_turn) != 0)
+        if (type == Unit.TypeEnum.Boss && GameInfo.Instance.board.GetPlayerInfo(Unit.TypeEnum.Boss, m_turn) != 0)
             return false;
-        if (GlobalInfo.Instance.board.GetPlayerTotalCount(m_turn) - GlobalInfo.Instance.board.GetPlayerInfo(Unit.TypeEnum.Bread, m_turn) >= 5)
+        if (GameInfo.Instance.board.GetPlayerTotalCount(m_turn) - GameInfo.Instance.board.GetPlayerInfo(Unit.TypeEnum.Bread, m_turn) >= 5)
             return false;
 
         return true;
@@ -173,12 +185,8 @@ public class UIStorage : MonoBehaviour {
     #endregion
 
     #region Unity Callback Functions
-    void Awake() {
-        GlobalInfo.Instance.storage = this;
-    }
-
     void Update() {
-        if (GlobalInfo.Instance.controller.Phase == Controller.PhaseState.Player) {
+        if (GameInfo.Instance.controller.Phase == Controller.PhaseState.Player) {
             for (var i = 0; i < NowPlayer.cards.Length; i++) {
                 var card = NowPlayer.cards[i];
                 Unit.TypeEnum type = StorageInfo.CardTypeList[i];
@@ -199,7 +207,7 @@ public class UIStorage : MonoBehaviour {
 
     Vector3 UI2WorldPosition(Vector3 pos) {
         var screenPos = RectTransformUtility.WorldToScreenPoint(null, pos);
-        var worldPos = GlobalInfo.Instance.mainCamera.ScreenToWorldPoint(screenPos);
+        var worldPos = GameInfo.Instance.mainCamera.ScreenToWorldPoint(screenPos);
         worldPos.z = 0;
         return worldPos;
     }

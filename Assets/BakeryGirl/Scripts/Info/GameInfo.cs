@@ -1,26 +1,20 @@
 using UnityEngine;
 using System;
 
-public class GlobalInfo : MonoBehaviour {
+public class GameInfo : MonoBehaviour {
 	// Singleton implement
-	private static GlobalInfo m_instance;
-	protected GlobalInfo() {}
-	public static GlobalInfo Instance {
+	private static GameInfo m_instance;
+	protected GameInfo() {}
+	public static GameInfo Instance {
 	    get {
-            if (m_instance == null) {
-                var obj = new GameObject("GlobalInfo", typeof(GlobalInfo));
-                m_instance = obj.GetComponent<GlobalInfo>();
-            }
-		
 		    return m_instance;
 	    }
     }
 
     // Static Info
-    public const string kMainScene = "newui";
+    public const string kMainScene = "main";
     public const string kNetworkEntryScene = "network-entry";
-    public const string kMultiplayerSceneSide0 = "multiplayer-side0";
-    public const string kMultiplayerSceneSide1 = "multiplayer-side0";
+    public const string kMultiplayerScene = "main";
 
     // Global Info
     public int GameWidth
@@ -38,8 +32,33 @@ public class GlobalInfo : MonoBehaviour {
     public Controller controller;
     public CharacterImageShowup characterImage;
 
+    public string blackPlayerName = "PMCGK";
+    public string whitePlayerName = "SFtestbot";
+
+    private bool m_shouldUpsidedown = false;
+    
+    public bool ShouldUpsidedown {
+        get {
+            return m_shouldUpsidedown;
+        }
+    }
+
     void Awake() {
         m_instance = this;
+    }
+
+    public void NewGame() {
+        Unit.OwnerEnum playeSide;
+        // If the gameMode is normal, then there is no 'playerSide' since both sides are players,
+        // However, if the gameMode is agent, and the playerSide is white, so the whole game should display upsidedown.
+        if (controller.Mode == Controller.GameMode.Normal && controller.Agent != null) {
+            playeSide = Unit.OwnerEnum.None;
+        }
+        else {
+            playeSide = controller.Agent.PlayerTurn;
+        }
+
+        m_shouldUpsidedown = playeSide == Unit.OwnerEnum.White;
     }
 }
 
@@ -143,6 +162,12 @@ public class Position : ICloneable
 		_r = r;
 		_c = c;
 	}
+
+    public Position Upsidedown {
+        get {
+            return new Position(BoardInfo.Row - R - 1, BoardInfo.Col - C - 1);
+        }
+    }
 
     public static Position operator+ (Position a, Position b)
     {

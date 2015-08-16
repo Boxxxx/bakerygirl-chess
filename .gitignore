@@ -6,6 +6,7 @@
 *.DS_Store
 *.unityproj
 *.pidb
+/.vs/
 /obj/
 /Library/
 /Release/

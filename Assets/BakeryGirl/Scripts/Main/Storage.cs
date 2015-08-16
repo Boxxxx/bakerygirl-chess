@@ -81,15 +81,15 @@ public class Storage : BaseBehavior
     /// <returns></returns>
     public bool BuyCard(Unit.TypeEnum type, Unit.OwnerEnum owner)
     {
-        Unit newCard = GlobalInfo.Instance.board.InstantiateUnit(new UnitInfo(BoardInfo.Base[(int)turn], type, owner));
+        Unit newCard = GameInfo.Instance.board.InstantiateUnit(new UnitInfo(BoardInfo.Base[(int)turn], type, owner));
         Transform card = NowBoard.transform.Find("Unit").transform.Find(TypeToIndex(type).ToString());
         newCard.transform.position = card.transform.position;
 
         hasbuy = true;
 
         newCard.Owner = owner;
-        GlobalInfo.Instance.board.ModifyPlayerInfo(Unit.TypeEnum.Bread, turn, -StorageInfo.CardCost[TypeToIndex(newCard.Type)]);
-        GlobalInfo.Instance.controller.BuyCardEffect(newCard, owner);
+        GameInfo.Instance.board.ModifyPlayerInfo(Unit.TypeEnum.Bread, turn, -StorageInfo.CardCost[TypeToIndex(newCard.Type)]);
+        GameInfo.Instance.controller.BuyCardEffect(newCard, owner);
 
         return true;
     }
@@ -144,11 +144,11 @@ public class Storage : BaseBehavior
             return false;
         if (resourceNum[(int)turn] < StorageInfo.CardCost[TypeToIndex(type)])
             return false;
-        if (GlobalInfo.Instance.board.GetUnitOwner(BoardInfo.Base[(int)turn]) != Unit.OwnerEnum.None)
+        if (GameInfo.Instance.board.GetUnitOwner(BoardInfo.Base[(int)turn]) != Unit.OwnerEnum.None)
             return false;
-        if (type == Unit.TypeEnum.Boss && GlobalInfo.Instance.board.GetPlayerInfo(Unit.TypeEnum.Boss, turn) != 0)
+        if (type == Unit.TypeEnum.Boss && GameInfo.Instance.board.GetPlayerInfo(Unit.TypeEnum.Boss, turn) != 0)
             return false;
-        if (GlobalInfo.Instance.board.GetPlayerTotalCount(turn) - GlobalInfo.Instance.board.GetPlayerInfo(Unit.TypeEnum.Bread, turn) >= 5)
+        if (GameInfo.Instance.board.GetPlayerTotalCount(turn) - GameInfo.Instance.board.GetPlayerInfo(Unit.TypeEnum.Bread, turn) >= 5)
             return false;
 
         return true;
@@ -163,7 +163,7 @@ public class Storage : BaseBehavior
     {
         for (int i = 0; i < StorageInfo.CardTypeList.Length; i++)
         {
-            Unit unit = GlobalInfo.Instance.board.InstantiateUnit(new UnitInfo(StorageInfo.CardTypeList[i], owner));
+            Unit unit = GameInfo.Instance.board.InstantiateUnit(new UnitInfo(StorageInfo.CardTypeList[i], owner));
             unit.name = i.ToString();
             unit.transform.parent = board.transform.Find("Unit");
             unit.transform.localPosition = StorageInfo.CardPosOffset[i];
@@ -199,7 +199,7 @@ public class Storage : BaseBehavior
     }
 	
 	void Update () {
-        if (GlobalInfo.Instance.controller.Phase != Controller.PhaseState.Other)
+        if (GameInfo.Instance.controller.Phase != Controller.PhaseState.Other)
         {
             Transform board = NowBoard.transform.Find("Unit");
             foreach (Transform card in board)
@@ -215,13 +215,13 @@ public class Storage : BaseBehavior
                 {
                     card.gameObject.SetActive(true);
 
-                    if (GlobalInfo.Instance.controller.Phase == Controller.PhaseState.Player
-                        && card.collider.Raycast(GlobalInfo.Instance.mainCamera.ScreenPointToRay(Input.mousePosition), out hit, 1000f))
+                    if (GameInfo.Instance.controller.Phase == Controller.PhaseState.Player
+                        && card.collider.Raycast(GameInfo.Instance.mainCamera.ScreenPointToRay(Input.mousePosition), out hit, 1000f))
                     {
                         card.GetComponent<Unit>().Focus = true;
                         if (Input.GetMouseButtonUp(0))
                         {
-                            GlobalInfo.Instance.controller.DoAction(PlayerAction.CreateBuy(type));
+                            GameInfo.Instance.controller.DoAction(PlayerAction.CreateBuy(type));
                         }
                     }
                     else

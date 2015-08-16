@@ -7,7 +7,7 @@ public class SwitchMode : MonoBehaviour {
 
     void RefreshText()
     {
-        if (GlobalInfo.Instance.controller.Mode == Controller.GameMode.Normal)
+        if (GameInfo.Instance.controller.Mode == Controller.GameMode.Normal)
             transform.Find("Label").GetComponent<UILabel>().text = "切换到 人机对战";
         else
             transform.Find("Label").GetComponent<UILabel>().text = "切换到 双人对战";
@@ -24,7 +24,7 @@ public class SwitchMode : MonoBehaviour {
 
     void OnClick()
     {
-        controller = GlobalInfo.Instance.controller;
+        controller = GameInfo.Instance.controller;
         controller.RestartGame(controller.Mode == Controller.GameMode.Normal ? Controller.GameMode.Agent : Controller.GameMode.Normal);
 
         RefreshText();

@@ -7,7 +7,6 @@ public class CharacterImageShowup : BaseBehavior {
     public const float kShowingTime = 0.25f;
 
     public SpriteRenderer sprite;
-    public Dictionary<string, Sprite> cardImages;
 
     public enum ShowState {
         NotShow, Showing, Showed, ShowingOff
@@ -64,14 +63,15 @@ public class CharacterImageShowup : BaseBehavior {
     }
 
     void _Show(string name) {
-        if (!cardImages.ContainsKey(name)) {
+        var characterImage = ArtManager.Instance.GetCharacterImage(name);
+        if (characterImage == null) {
             sprite.sprite = null;
             m_showState = ShowState.NotShow;
             m_showedCardName = "";
             return;
         }
         m_showedCardName = name;
-        sprite.sprite = cardImages[name];
+        sprite.sprite = characterImage;
         sprite.transform.localPosition = kShowingOffset;
         iTween.MoveTo(sprite.gameObject, iTween.Hash("position", Vector3.zero, "time", kShowingTime, "oncomplete", "OnShowingComplete", "oncompletetarget", gameObject, "islocal", true));
         m_showState = ShowState.Showing;
@@ -79,6 +79,5 @@ public class CharacterImageShowup : BaseBehavior {
 
     protected override void Awake() {
         base.Awake();
-        GlobalInfo.Instance.characterImage = this;
     }
 }

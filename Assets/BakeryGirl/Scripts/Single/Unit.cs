@@ -84,7 +84,7 @@ public class Unit : MonoBehaviour
         this.pos = info.pos;
 
         setTransform(pos);
-        setSprite(GlobalInfo.Instance.board.GetCardGraphics(type, owner));
+        setSprite(ArtManager.Instance.GetBattleCardGraphics(type, owner));
 
         if (IsSoldier(type))
             transform.parent = GameObject.Find("soldier").transform;
@@ -105,7 +105,7 @@ public class Unit : MonoBehaviour
 	
 	void Update () {
         if (type == TypeEnum.Bread) {
-            var unit = GlobalInfo.Instance.board.GetUnit(pos, false);
+            var unit = GameInfo.Instance.board.GetUnit(pos, false);
             if (unit != null && unit.type != TypeEnum.Scout) {
                 Minimum = true;
             }
@@ -136,7 +136,7 @@ public class Unit : MonoBehaviour
         }
     }
     public void setSprite(string name) {
-        setSprite(GlobalInfo.Instance.board.GetCardGraphicsByName(name));
+        setSprite(ArtManager.Instance.GetBattleCardGraphicsByName(name));
     }
     public void setPosition(Position pos)
     {
@@ -159,19 +159,27 @@ public class Unit : MonoBehaviour
         }
     }
     public string GetCardName() {
-        return Board.GetCardName(type, owner);
+        return ArtManager.GetCardName(type, owner);
     }
     #endregion
 
     #region Public Static Utility Functions
     public static Vector2 PosToScreen(Position position)
     {
+        if (GameInfo.Instance.ShouldUpsidedown) {
+            position = position.Upsidedown;
+        }
         return new Vector2(position.C * BoardInfo.GridWidth + BoardInfo.GridZeroPosition.x, position.R * BoardInfo.GridWidth + BoardInfo.GridZeroPosition.y);
     }
     public static Position ScreenToPos(Vector2 position)
     {
-        return new Position((int)Mathf.Floor((position.y - BoardInfo.GridZeroPosition.y + BoardInfo.GridHalfWidth) / BoardInfo.GridHeight),
-                        (int)Mathf.Floor((position.x - BoardInfo.GridZeroPosition.x + BoardInfo.GridHalfHeight) / BoardInfo.GridWidth));
+        var pos = new Position(
+            (int)Mathf.Floor((position.y - BoardInfo.GridZeroPosition.y + BoardInfo.GridHalfWidth) / BoardInfo.GridHeight),
+            (int)Mathf.Floor((position.x - BoardInfo.GridZeroPosition.x + BoardInfo.GridHalfHeight) / BoardInfo.GridWidth));
+        if (GameInfo.Instance.ShouldUpsidedown) {
+            pos = pos.Upsidedown;
+        }
+        return pos;
     }
     public static OwnerEnum Opposite(OwnerEnum owner)
     {
@@ -193,13 +201,13 @@ public class Unit : MonoBehaviour
     {
         if (type == TypeEnum.Bread)
         {
-            GlobalInfo.Instance.board.ModifyPlayerInfo(type, owner, 1);
-            GlobalInfo.Instance.controller.StopEffect(Controller.EffectType.Killout);
+            GameInfo.Instance.board.ModifyPlayerInfo(type, owner, 1);
+            GameInfo.Instance.controller.StopEffect(Controller.EffectType.Killout);
             GameObject.Destroy(gameObject);
         }
         else if (IsSoldier(type))
         {
-            GlobalInfo.Instance.controller.StopEffect(Controller.EffectType.Killout);
+            GameInfo.Instance.controller.StopEffect(Controller.EffectType.Killout);
             GameObject.Destroy(gameObject);
         }
     }
@@ -207,14 +215,14 @@ public class Unit : MonoBehaviour
     {
         if (IsSoldier(type))
         {
-            GlobalInfo.Instance.board.Put(Pos, this);
-            GlobalInfo.Instance.controller.StopEffect(Controller.EffectType.MoveIn);
+            GameInfo.Instance.board.Put(Pos, this);
+            GameInfo.Instance.controller.StopEffect(Controller.EffectType.MoveIn);
         }
     }
     private void OnMoveComplete()
     {
-        GlobalInfo.Instance.board.Put(Pos, this);
-        GlobalInfo.Instance.controller.StopEffect(Controller.EffectType.Move);
+        GameInfo.Instance.board.Put(Pos, this);
+        GameInfo.Instance.controller.StopEffect(Controller.EffectType.Move);
     }
     #endregion
 }

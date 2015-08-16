@@ -12,7 +12,7 @@ public class TurnOver : MonoBehaviour {
 
     public void OnClick()
     {
-        GlobalInfo.Instance.controller.NextTurn(true);
+        GameInfo.Instance.controller.NextTurn(true);
     }
 
 }

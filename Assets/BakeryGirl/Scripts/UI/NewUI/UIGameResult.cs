@@ -18,22 +18,19 @@ public class UIGameResult : MonoBehaviour {
 
     public float moveInTime = 0.5f;
 
-    public void OnGameOver(string player0, string player1, int turn, Ruler.GameResult result) {
-        player0Name.text = player0;
-        player1Name.text = player1;
+    public void OnGameOver(UIStorage storage, int turn, Ruler.GameResult result) {
+        player0Name.text = storage.playerDown.playerName.text;
+        player1Name.text = storage.playerUp.playerName.text;
+        player0Flag.sprite = storage.playerDown.flag.sprite;
+        player0Flag.SetNativeSize();
+        player1Flag.sprite = storage.playerUp.flag.sprite;
+        player1Flag.SetNativeSize();
         turnNum.text = turn.ToString("D2");
-        bool player0Highlight = false;
-        bool player1Highlight = false;
-        switch (result) {
-            case Ruler.GameResult.Black_Win:
-                player0Highlight = true;
-                break;
-            case Ruler.GameResult.White_Win:
-                player1Highlight = true;
-                break;
-            default:
-                break;
-        }
+        bool player0Highlight = 
+            (result == Ruler.GameResult.Black_Win && !GameInfo.Instance.ShouldUpsidedown)
+            || (result == Ruler.GameResult.White_Win && GameInfo.Instance.ShouldUpsidedown);
+        bool player1Highlight = (result == Ruler.GameResult.White_Win && !GameInfo.Instance.ShouldUpsidedown)
+            || (result == Ruler.GameResult.Black_Win && GameInfo.Instance.ShouldUpsidedown);
         player0Name.color = player0Highlight ? StorageInfo.Orange : Color.white;
         player0Flag.color = player0Highlight ? StorageInfo.Orange : Color.white;
         player0Result.sprite = player0Highlight ? winSprite : loseSprite;

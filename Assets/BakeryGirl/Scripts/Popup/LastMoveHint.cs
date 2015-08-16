@@ -37,19 +37,24 @@ public class LastMoveHint : MonoBehaviour {
     }
 
     float _GetDirectionAngle(LastMoveInfo lastMove) {
+        float angle;
         if (lastMove.from.R == lastMove.to.R) {
             if (lastMove.from.C + 1 == lastMove.to.C) {
-                return 0f;
+                angle = 0f;
             }
             else {
-                return 180f;
+                angle = 180f;
             }
         }
         else if (lastMove.from.R + 1 == lastMove.to.R) {
-            return 90f;
+            angle = 90f;
         }
         else {
-            return -90f;
+            angle = -90f;
         }
+        if (GameInfo.Instance.ShouldUpsidedown) {
+            angle += 180;
+        }
+        return angle;
     }
 }
