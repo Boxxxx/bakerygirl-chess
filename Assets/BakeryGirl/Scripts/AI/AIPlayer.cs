@@ -161,7 +161,9 @@ public abstract class AIPlayer : PlayerAgent
 
     #region Unity Callback Functions
     void Awake() {
-        if (FindObjectOfType<PlayerAgent>() != null) {
+        // If there is other agent, destroy this one.
+        var agent = FindObjectOfType<PlayerAgent>();
+        if (agent != null && agent != this) {
             Destroy(gameObject);
         }
     }

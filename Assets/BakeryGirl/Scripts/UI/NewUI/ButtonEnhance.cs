@@ -21,7 +21,7 @@ public class ButtonEnhance : MonoBehaviour {
         }
     }
 
-    void Start() {
+    void Awake() {
         m_button = GetComponent<Button>();
         m_image = GetComponent<Image>();
     }
