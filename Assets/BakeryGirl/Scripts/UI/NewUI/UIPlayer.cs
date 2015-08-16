@@ -5,12 +5,12 @@ using System.Collections;
 public class UIPlayer : MonoBehaviour {
     public Text numRestResource;
     public RectTransform pointCollectResource;
-    public Button endTurn;
-    public Button cancel;
+    public ButtonEnhance endTurn;
+    public ButtonEnhance cancel;
     public Image flag;
     public Image waitingMask;
     public Text playerName;
-    public Button[] cards;
+    public ButtonEnhance[] cards;
 
     private int m_resource = 0;
     private Unit.OwnerEnum m_ownerType = Unit.OwnerEnum.None;
@@ -37,13 +37,13 @@ public class UIPlayer : MonoBehaviour {
         }
         set {
             m_isMyTurn = value;
-            endTurn.interactable = value;
-            cancel.interactable = value;
+            endTurn.Interactable = value;
+            cancel.Interactable = value;
             waitingMask.gameObject.SetActive(!value);
             flag.color = value ? StorageInfo.Orange : Color.black;
             playerName.color = value ? StorageInfo.Orange : Color.black;
             foreach (var card in cards) {
-                card.interactable = value;
+                card.Interactable = value;
             }
         }
     }
@@ -63,7 +63,6 @@ public class UIPlayer : MonoBehaviour {
         for (int i = 0; i < cards.Length; i++) {
             var image = cards[i].GetComponent<Image>();
             image.sprite = ArtManager.Instance.GetStorageCardSprite(StorageInfo.CardTypeList[i], owner);
-            image.SetNativeSize();
         }
     }
 }

@@ -113,7 +113,7 @@ public abstract class AIPlayer : PlayerAgent
     {
         get { return action; }
     }
-    public override Unit.OwnerEnum PlayerTurn { get { return myTurn; } }
+    public override Unit.OwnerEnum PlayerTurn { get { return Unit.Opposite(myTurn); } }
     public int Node
     {
         get { return nodeCount; }
@@ -141,7 +141,7 @@ public abstract class AIPlayer : PlayerAgent
     }
     public override bool SwitchTurn(Unit.OwnerEnum nowTurn, bool initial)
     {
-        return PlayerTurn == nowTurn;
+        return myTurn == nowTurn;
     }
     #endregion
 

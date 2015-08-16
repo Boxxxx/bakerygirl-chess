@@ -28,12 +28,12 @@ public class UIStorage : MonoBehaviour {
 
     public bool IsEndTurnValid {
         set {
-            NowPlayer.endTurn.interactable = value;
+            NowPlayer.endTurn.Interactable = value;
         }
     }
     public bool IsCancelValid {
         set {
-            NowPlayer.cancel.interactable = value;
+            NowPlayer.cancel.Interactable = value;
         }
     }
 
@@ -82,8 +82,8 @@ public class UIStorage : MonoBehaviour {
         m_turn = turn;
         PlayerBlack.IsMyTurn = turn == Unit.OwnerEnum.Black;
         PlayerWhite.IsMyTurn = turn != Unit.OwnerEnum.Black;
-        NowPlayer.endTurn.interactable = false;
-        NowPlayer.cancel.interactable = false;
+        NowPlayer.endTurn.Interactable = false;
+        NowPlayer.cancel.Interactable = false;
         status.SetTurn(turnNum);
     }
 
@@ -191,16 +191,16 @@ public class UIStorage : MonoBehaviour {
                 var card = NowPlayer.cards[i];
                 Unit.TypeEnum type = StorageInfo.CardTypeList[i];
                 if (!CanBuy(type)) {
-                    card.interactable = false;
+                    card.Interactable = false;
                 }
                 else {
-                    card.interactable = true;
+                    card.Interactable = true;
                 }
             }
         }
         else {
             foreach (var card in NowPlayer.cards) {
-                card.interactable = false;
+                card.Interactable = false;
             }
         }
     }
