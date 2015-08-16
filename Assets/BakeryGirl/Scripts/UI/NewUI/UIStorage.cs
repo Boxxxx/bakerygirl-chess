@@ -101,6 +101,7 @@ public class UIStorage : MonoBehaviour {
         m_hasbuy = true;
 
         newCard.Owner = owner;
+        newCard.CardActive = true;
         GameInfo.Instance.board.ModifyPlayerInfo(Unit.TypeEnum.Bread, m_turn, -StorageInfo.CardCost[TypeToIndex(newCard.Type)]);
         GameInfo.Instance.controller.BuyCardEffect(newCard, owner);
 
