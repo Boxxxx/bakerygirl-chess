@@ -177,6 +177,6 @@ namespace BakeryGirl.Chess {
         public virtual void OnGameOver(Ruler.GameResult result) {
             Debug.Log("Game Over, result is " + result);
         }
-        public virtual void OnSceneExit() { }
+        public virtual void OnAgentDestroy() { }
     }
 }

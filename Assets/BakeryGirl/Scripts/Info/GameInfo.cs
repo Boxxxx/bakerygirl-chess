@@ -16,6 +16,8 @@ public class GameInfo : MonoBehaviour {
     public const string kNetworkEntryScene = "network-entry";
     public const string kMultiplayerScene = "main";
 
+    public static Controller.GameMode nextMode = Controller.GameMode.Agent;
+
     // Global Info
     public int GameWidth
 	{

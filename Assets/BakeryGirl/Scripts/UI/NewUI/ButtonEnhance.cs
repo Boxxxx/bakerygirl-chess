@@ -21,6 +21,10 @@ public class ButtonEnhance : MonoBehaviour {
         }
     }
 
+    public void SetInteractable(bool value) {
+        Interactable = value;
+    }
+
     void Awake() {
         m_button = GetComponent<Button>();
         m_image = GetComponent<Image>();

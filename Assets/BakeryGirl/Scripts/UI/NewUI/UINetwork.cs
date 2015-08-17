@@ -69,7 +69,7 @@ public class UINetwork : MonoBehaviour {
     }
 
     void EnterGame() {
-        ReloadLevel(GameInfo.kMultiplayerScene, false);
+        UISwitchMode.ReloadLevel(GameInfo.kMultiplayerScene, false);
     }
     #endregion
 
@@ -87,10 +87,10 @@ public class UINetwork : MonoBehaviour {
 
     public void OnExit() {
         if (CurrentState == NetworkState.MainEntry) {
-            ReloadLevel(GameInfo.kMainScene, true);
+            UISwitchMode.ReloadLevel(GameInfo.kMainScene, true);
         }
         else {
-            ReloadLevel(GameInfo.kNetworkEntryScene, true);
+            UISwitchMode.ReloadLevel(GameInfo.kNetworkEntryScene, true);
         }
     }
 
@@ -127,7 +127,7 @@ public class UINetwork : MonoBehaviour {
         }
         UIErrorPrompt.Show("Disonnected.", () => {
             Debug.Log("disconnected, cause: " + disconnectCause);
-            ReloadLevel(GameInfo.kNetworkEntryScene, true);
+            UISwitchMode.ReloadLevel(GameInfo.kNetworkEntryScene, true);
         });
     }
 
@@ -151,7 +151,7 @@ public class UINetwork : MonoBehaviour {
 
     void OnCloseRoom() {
         UIErrorPrompt.Show("Player has left.", () => {
-            ReloadLevel(GameInfo.kNetworkEntryScene, true);
+            UISwitchMode.ReloadLevel(GameInfo.kNetworkEntryScene, true);
         });
     }
 
@@ -165,7 +165,7 @@ public class UINetwork : MonoBehaviour {
             case Consts.ErrorCode.NotCompatible:
                 Debug.Log("game data not compatible");
                 UIErrorPrompt.Show("Game data not compatible.", () => {
-                    ReloadLevel(GameInfo.kNetworkEntryScene, true);
+                    UISwitchMode.ReloadLevel(GameInfo.kNetworkEntryScene, true);
                 });
                 break;
         }
@@ -194,7 +194,7 @@ public class UINetwork : MonoBehaviour {
             if (PassTime > timeLimit) {
                 _state = NetworkState.Timeout;
                 UIErrorPrompt.Show("Timeout.", () => {
-                    ReloadLevel(GameInfo.kNetworkEntryScene, true);
+                    UISwitchMode.ReloadLevel(GameInfo.kNetworkEntryScene, true);
                 });
             }
         }
@@ -217,11 +217,4 @@ public class UINetwork : MonoBehaviour {
         Debug.Log("RoomList: [" + roomList + "]");
     }
     #endregion
-
-    public static void ReloadLevel(string sceneName, bool destroyClient) {
-        if (destroyClient && GameClientAgent.Instance != null) {
-            Destroy(GameClientAgent.Instance.gameObject);
-        }
-        Application.LoadLevel(sceneName);
-    }
 }

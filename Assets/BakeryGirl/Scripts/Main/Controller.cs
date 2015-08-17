@@ -187,6 +187,7 @@ public class Controller : MonoBehaviour
     public UIGameResult resultUI;
     public UIStatus statusUI;
     public UIBattleStart battleStartUI;
+    public UISwitchMode switchModeUI;
     public LastMoveHint lastMoveHint;
 
     private GameMode gameMode = GameMode.Normal;
@@ -391,6 +392,7 @@ public class Controller : MonoBehaviour
 
         board.NewGame();
         storage.NewGame();
+        switchModeUI.NewGame();
         state = MainState.Ready;
         turn = Unit.OwnerEnum.Black;
         turnNum = 0;
@@ -588,12 +590,20 @@ public class Controller : MonoBehaviour
         }
         return flag;
     }
+
+    public void DestroyAgent() {
+        if (Agent != null) {
+            Agent.OnAgentDestroy();
+        }
+    }
     #endregion
 
     #region Unity Callback Functions
     void Awake()
     {
-        gameMode = initGameMode;
+        // If someone set nextMode to valid term, then use it, and after that we set nextMode to stay.
+        gameMode = GameInfo.nextMode == GameMode.Stay ? initGameMode : GameInfo.nextMode;
+        GameInfo.nextMode = GameMode.Stay;
     }
 
     void Start()
@@ -604,7 +614,7 @@ public class Controller : MonoBehaviour
             Agent = GameObject.FindObjectOfType<PlayerAgent>();
         }
 
-        NewGame(initGameMode);
+        NewGame(gameMode);
         StartGame();
     }
 
@@ -667,7 +677,7 @@ public class Controller : MonoBehaviour
     }
 
     void OnDestroy() {
-        Agent.OnSceneExit();
+        DestroyAgent();
     }
     #endregion
 }

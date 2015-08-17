@@ -91,7 +91,7 @@ namespace BakeryGirl.Chess {
             DestroyClient();
         }
 
-        public override void OnSceneExit() {
+        public override void OnAgentDestroy() {
             Destroy(gameObject);
             _instance = null;
         }
