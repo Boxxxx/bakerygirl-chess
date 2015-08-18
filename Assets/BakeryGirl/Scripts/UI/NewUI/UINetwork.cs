@@ -8,12 +8,21 @@ public class UINetwork : MonoBehaviour {
     private const string kDefaultUserName = "Jefuty";
     private const float kEnterGameDelay = 1f;
 
+    [System.Serializable]
+    public class InfoBoard {
+        public Image defaultText;
+        public Image waitingText;
+        public Image connectingText;
+        public Image gameplayText;
+    }
+
     public enum NetworkState {
         None, MainEntry, Connecting, WaitingForOpponent, Timeout, GamePlay
     };
 
     public Text timecostLabel;
-    public Text infoLabel;
+    public InfoBoard infoBoard;
+    public Button stopButton;
     public Button exitButton;
 
     public RectTransform matchPanel;
@@ -53,7 +62,7 @@ public class UINetwork : MonoBehaviour {
         get { return _passtime; }
         set {
             _passtime = value;
-            timecostLabel.text = string.Format("{0} : {1}", ((int)_passtime / 60).ToString("D2"), ((int)_passtime % 60).ToString("D2"));
+            timecostLabel.text = string.Format("{0} : {1}", ((int)_passtime / 60).ToString("D1"), ((int)_passtime % 60).ToString("D2"));
         }
     }
 
@@ -71,6 +80,27 @@ public class UINetwork : MonoBehaviour {
     void EnterGame() {
         UISwitchMode.ReloadLevel(GameInfo.kMultiplayerScene, false);
     }
+
+    void RefreshInfoboard(NetworkState state) {
+        infoBoard.defaultText.gameObject.SetActive(false);
+        infoBoard.waitingText.gameObject.SetActive(false);
+        infoBoard.connectingText.gameObject.SetActive(false);
+        infoBoard.gameplayText.gameObject.SetActive(false);
+        switch (state) {
+            case NetworkState.MainEntry:
+                infoBoard.defaultText.gameObject.SetActive(true);
+                break;
+            case NetworkState.Connecting:
+                infoBoard.connectingText.gameObject.SetActive(true);
+                break;
+            case NetworkState.WaitingForOpponent:
+                infoBoard.waitingText.gameObject.SetActive(true);
+                break;
+            case NetworkState.GamePlay:
+                infoBoard.gameplayText.gameObject.SetActive(true);
+                break;
+        }
+    }
     #endregion
 
     #region Event Callbacks
@@ -85,37 +115,39 @@ public class UINetwork : MonoBehaviour {
         }
     }
 
-    public void OnExit() {
-        if (CurrentState == NetworkState.MainEntry) {
-            UISwitchMode.ReloadLevel(GameInfo.kMainScene, true);
-        }
-        else {
+    public void OnStop() {
+        if (CurrentState != NetworkState.MainEntry) {
             UISwitchMode.ReloadLevel(GameInfo.kNetworkEntryScene, true);
         }
     }
 
+    public void OnExit() {
+        UISwitchMode.ReloadLevel(GameInfo.kMainScene, true);
+    }
+
     void OnSwitchState(NetworkState newState, NetworkState oldState) {
+        RefreshInfoboard(newState);
         switch (_state) {
             case NetworkState.MainEntry:
                 matchPanel.gameObject.SetActive(true);
                 exitButton.gameObject.SetActive(true);
-                infoLabel.text = "战术联网系统";
+                stopButton.gameObject.SetActive(false);
                 PassTime = 0;
                 break;
             case NetworkState.Connecting:
                 matchPanel.gameObject.SetActive(false);
                 exitButton.gameObject.SetActive(true);
-                infoLabel.text = "连接网络中...";
+                stopButton.gameObject.SetActive(true);
                 break;
             case NetworkState.WaitingForOpponent:
                 matchPanel.gameObject.SetActive(false);
                 exitButton.gameObject.SetActive(true);
-                infoLabel.text = "等待对手中...";
+                stopButton.gameObject.SetActive(true);
                 break;
             case NetworkState.GamePlay:
                 matchPanel.gameObject.SetActive(false);
                 exitButton.gameObject.SetActive(false);
-                infoLabel.text = "准备开战...";
+                stopButton.gameObject.SetActive(false);
                 Invoke("EnterGame", kEnterGameDelay);
                 break;
         }

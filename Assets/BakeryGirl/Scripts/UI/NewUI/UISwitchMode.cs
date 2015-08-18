@@ -74,8 +74,13 @@ public class UISwitchMode : MonoBehaviour {
     }
 
     public static void ReloadLevel(string sceneName, bool destroyClient) {
-        if (destroyClient && GameInfo.Instance != null && GameInfo.Instance.controller != null) {
-            GameInfo.Instance.controller.DestroyAgent();
+        if (destroyClient) {
+            if (GameInfo.Instance != null && GameInfo.Instance.controller != null) {
+                GameInfo.Instance.controller.DestroyAgent();
+            }
+            else {
+                Destroy(GameClientAgent.Instance.gameObject);
+            }
         }
         Application.LoadLevel(sceneName);
     }
