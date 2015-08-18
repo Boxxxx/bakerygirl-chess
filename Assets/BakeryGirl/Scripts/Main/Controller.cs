@@ -533,10 +533,12 @@ public class Controller : MonoBehaviour
             case Ruler.ConflictResult.Boom:
                 KillEnemyEffect(board.Pick(src.Pos));
                 KillEnemyEffect(board.Pick(des.Pos));
+                SoundManager.Instance.PlaySound("bomb");
                 break;
             case Ruler.ConflictResult.Src_Win:
                 KillEnemyEffect(board.Pick(des.Pos));
                 MoveEffect(src, desPos);
+                SoundManager.Instance.PlaySound("gun_fire");
                 break;
             case Ruler.ConflictResult.Des_Win:
                 return false;
@@ -544,15 +546,18 @@ public class Controller : MonoBehaviour
                 Unit bread = board.Pick(des.Pos);
                 MoveEffect(src, desPos);
                 CollectBreadEffect(bread, src.Owner);
+                SoundManager.Instance.PlaySound("gain_resource");
                 break;
             case Ruler.ConflictResult.Nothing:
                 MoveEffect(src, desPos);
+                SoundManager.Instance.PlaySound("move");
                 break;
         }
         return true;
     }
     private bool _DoBuy(Unit.TypeEnum type)
     {
+        SoundManager.Instance.PlaySound("build");
         return GameInfo.Instance.storage.BuyCard(type, turn);
     }
     #endregion
