@@ -71,18 +71,18 @@ public class SoundManager : MonoBehaviour {
         pool_channels.RecycleObject(channel.gameObject);
     }
 
-    public void PlayBGM(AudioClip clip, float delay = 0, string channel = "bgm") {
-        this[channel].PlayClip(SoundChannel.SoundType.BGM, clip, OnChannelPlayEnd, true, 1, 0, delay);
+    public void PlayBGM(AudioClip clip, float delay = 0, string channel = "bgm", float fadeOutTime = 0) {
+        this[channel].PlayClip(SoundChannel.SoundType.BGM, clip, OnChannelPlayEnd, true, 1, fadeOutTime, delay);
     }
-    public void PlayBGM(string key, float delay = 0, string channel = "bgm") {
-        PlayBGM(GetClipByKey(m_soundResourcesPath + "bgm/" + key), delay, channel);
+    public void PlayBGM(string key, float delay = 0, string channel = "bgm", float fadeOutTime = 0) {
+        PlayBGM(GetClipByKey(m_soundResourcesPath + "bgm/" + key), delay, channel, fadeOutTime);
     }
-    public void PlayBGMWithIntro(AudioClip clipIntro, AudioClip clipLoop, float delay = 0, string channel = "bgm") {
-        this[channel].PlayClips(SoundChannel.SoundType.BGM, new[] { clipIntro, clipLoop }, OnChannelPlayEnd, true, 1, 0, delay);
+    public void PlayBGMWithIntro(AudioClip clipIntro, AudioClip clipLoop, float delay = 0, string channel = "bgm", float fadeOutTime = 0) {
+        this[channel].PlayClips(SoundChannel.SoundType.BGM, new[] { clipIntro, clipLoop }, OnChannelPlayEnd, true, 1, fadeOutTime, delay);
     }
-    public void PlayBGMWithIntro(string introKey, string loopKey, float delay = 0, string channel = "bgm") {
+    public void PlayBGMWithIntro(string introKey, string loopKey, float delay = 0, string channel = "bgm", float fadeOutTime = 0) {
         PlayBGMWithIntro(GetClipByKey(m_soundResourcesPath + "bgm/" + introKey), GetClipByKey(m_soundResourcesPath + "bgm/" + loopKey),
-            delay, channel);
+            delay, channel, fadeOutTime);
     }
 
     public string PlayBGSound(string key, float delay = 0, string channel = "") {

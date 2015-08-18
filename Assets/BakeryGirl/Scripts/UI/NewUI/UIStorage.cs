@@ -162,6 +162,8 @@ public class UIStorage : MonoBehaviour {
             return false;
         if (GameInfo.Instance.board.GetUnitOwner(BoardInfo.Base[(int)m_turn]) != Unit.OwnerEnum.None)
             return false;
+        if (type == Unit.TypeEnum.Bomb && GameInfo.Instance.board.GetPlayerInfo(Unit.TypeEnum.Bomb, m_turn) >= 2)
+            return false;
         if (type == Unit.TypeEnum.Boss && GameInfo.Instance.board.GetPlayerInfo(Unit.TypeEnum.Boss, m_turn) != 0)
             return false;
         if (GameInfo.Instance.board.GetPlayerTotalCount(m_turn) - GameInfo.Instance.board.GetPlayerInfo(Unit.TypeEnum.Bread, m_turn) >= 5)
