@@ -62,6 +62,10 @@ public class GameInfo : MonoBehaviour {
 
         m_shouldUpsidedown = playeSide == Unit.OwnerEnum.White;
     }
+
+    public static bool IsGameOver() {
+        return Instance != null && Instance.controller.State == Controller.MainState.Over;
+    }
 }
 
 public class BoardInfo

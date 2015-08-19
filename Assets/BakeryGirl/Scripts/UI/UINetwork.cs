@@ -182,9 +182,11 @@ public class UINetwork : MonoBehaviour {
     }
 
     void OnCloseRoom() {
-        UIErrorPrompt.Show("Player has left.", () => {
-            UISwitchMode.ReloadLevel(GameInfo.kNetworkEntryScene, true);
-        });
+        if (!GameInfo.IsGameOver()) {
+            UIErrorPrompt.Show("Player has left.", () => {
+                UISwitchMode.ReloadLevel(GameInfo.kNetworkEntryScene, true);
+            });
+        }
     }
 
     void OnGameStart() {
