@@ -28,6 +28,7 @@ namespace BakeryGirl.Chess {
         public string customServerIp = "120.24.99.31:5055";
 
         public bool logOnScreen = true;
+        public bool verifyEachTurn = true;
 
         public GameClient Client {
             get;
@@ -144,7 +145,9 @@ namespace BakeryGirl.Chess {
                 Client.SendMove(actions);
             }
             else {
-                Client.VerifyBoardFromProperties();
+                if (verifyEachTurn) {
+                    Client.VerifyBoardFromProperties();
+                }
             }
         }
         #endregion

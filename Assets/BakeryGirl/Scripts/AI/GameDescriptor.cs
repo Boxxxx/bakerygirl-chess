@@ -116,7 +116,7 @@ public class GameDescriptor : ICloneable
             return false;
         if (!Unit.IsSoldier(type))
             return false;
-        if (playerInfo[(int)owner][(int)Unit.TypeEnum.Bread] < StorageInfo.CardCost[Storage.TypeToIndex(type)])
+        if (playerInfo[(int)owner][(int)Unit.TypeEnum.Bread] < StorageInfo.CardCost[UIStorage.TypeToIndex(type)])
             return false;
         if (GetInfo(BoardInfo.Base[(int)owner]).owner != Unit.OwnerEnum.None)
             return false;
@@ -133,7 +133,7 @@ public class GameDescriptor : ICloneable
             return false;
 
         Put(BoardInfo.Base[(int)owner], new UnitInfo(type, owner));
-        playerInfo[(int)owner][(int)Unit.TypeEnum.Bread] -= StorageInfo.CardCost[Storage.TypeToIndex(type)];
+        playerInfo[(int)owner][(int)Unit.TypeEnum.Bread] -= StorageInfo.CardCost[UIStorage.TypeToIndex(type)];
         hasBuy = true;
 
         return true;
