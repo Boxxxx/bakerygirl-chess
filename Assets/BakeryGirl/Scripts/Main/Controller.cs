@@ -295,6 +295,7 @@ public class Controller : MonoBehaviour
         turnNum = cache.turnNum;
         state = MainState.Move;
         moveState = MoveState.Idle;
+        _actionsCurrentTurn.Clear();
     }
     #endregion
 

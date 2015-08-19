@@ -103,6 +103,10 @@ public class Board : BaseBehavior
                 }
             }
         }
+        for (Unit.TypeEnum type = Unit.TypeEnum.Bread; type < Unit.TypeEnum.Void; type++) {
+            playerInfo[(int)Unit.OwnerEnum.Black][type] = cache.descriptor.GetPlayerInfo(type, Unit.OwnerEnum.Black);
+            playerInfo[(int)Unit.OwnerEnum.White][type] = cache.descriptor.GetPlayerInfo(type, Unit.OwnerEnum.White);
+        }
         restBreadNum = cache.descriptor.RestResource;
         SwitchTurn(cache.descriptor.Turn);
     }
