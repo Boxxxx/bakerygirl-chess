@@ -8,7 +8,7 @@ public class Card : MonoBehaviour {
     public Sprite selectedSprite;
 
     public bool alwaysBreath = false;
-    public bool breathFromOriginColor = true;
+        public bool breathFromOriginColor = true;
     public float breathTime = 1.0f;
     public iTween.EaseType breathEaseType = iTween.EaseType.linear;
     public Color breathColor = new Color(1.0f, 1.0f, 1.0f, 0.6f);
@@ -16,8 +16,16 @@ public class Card : MonoBehaviour {
     private float m_halfBreathTime = 0;
     private float m_breathDelta = 0;
     private Color m_initColor;
+    private bool m_isAlive = true;
     private bool m_isActive = false;
     private bool m_isSelected = false;
+
+    public bool IsAlive {
+        get { return m_isAlive; }
+        set {
+            m_isAlive = value;
+        }
+    }
 
     public bool IsActive {
         get { return m_isActive; }
@@ -53,7 +61,7 @@ public class Card : MonoBehaviour {
 
     void Update() {
         var color = m_initColor;
-        if (IsActive || alwaysBreath) {
+        if (m_isAlive && (IsActive || alwaysBreath)) {
             m_breathDelta += Time.deltaTime;
             if (m_breathDelta >= breathTime) {
                 m_breathDelta -= breathTime;

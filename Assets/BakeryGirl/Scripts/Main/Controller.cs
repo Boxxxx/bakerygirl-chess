@@ -360,6 +360,7 @@ public class Controller : MonoBehaviour
 
     private void KillEnemyEffect(Unit enemy)
     {
+        enemy.CardAlive = false;
         iTween.FadeTo(enemy.gameObject, 0, 0.5f);
         iTween.MoveTo(enemy.gameObject, iTween.Hash("position", enemy.gameObject.transform.position + UnitInfo.KilledEffectOffset, "time", 1f, "oncomplete", "OnDisappearComplete", "oncompletetarget", enemy.gameObject));
         StartEffect(EffectType.Killout);

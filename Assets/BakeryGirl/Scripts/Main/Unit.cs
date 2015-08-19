@@ -49,6 +49,13 @@ public class Unit : MonoBehaviour
             }
         }
     }
+    public bool CardAlive {
+        set {
+            if (m_card != null) {
+                m_card.IsAlive = value;
+            }
+        }
+    }
     public bool Minimum {
         get { return isMinimum; }
         set {
@@ -131,7 +138,7 @@ public class Unit : MonoBehaviour
         if (graphics != null) {
             m_card = (Instantiate(graphics.gameObject, transform.position, Quaternion.identity) as GameObject).GetComponent<Card>();
             m_card.transform.parent = transform;
-            m_card.spriteRenderer.sortingOrder = -pos.R;
+            m_card.spriteRenderer.sortingOrder = GetSortingOrder();;
             sprite = m_card.GetComponentInChildren<SpriteRenderer>();
         }
     }
@@ -143,7 +150,7 @@ public class Unit : MonoBehaviour
         this.pos = pos;
         setTransform(pos);
         if (m_card != null) {
-            m_card.spriteRenderer.sortingOrder = -pos.R;
+            m_card.spriteRenderer.sortingOrder = GetSortingOrder();
         }
     }
     public void SetAlpha(float alpha) {
@@ -223,6 +230,10 @@ public class Unit : MonoBehaviour
     {
         GameInfo.Instance.board.Put(Pos, this);
         GameInfo.Instance.controller.StopEffect(Controller.EffectType.Move);
+    }
+
+    private int GetSortingOrder() {
+        return GameInfo.Instance.ShouldUpsidedown ? pos.R : -pos.R;
     }
     #endregion
 }
