@@ -452,8 +452,9 @@ public class Controller : MonoBehaviour
                 if (pos.IsValid && Input.GetMouseButtonUp(0)) {
                     if (board.GetUnitOwner(pos) == Turn) {
                         moveState = MoveState.Pick;
-
                         hint.SetMoveHint(board.GetUnit(pos));
+
+                        SoundManager.Instance.PlaySound("button_click");
                     }
                 }
             }

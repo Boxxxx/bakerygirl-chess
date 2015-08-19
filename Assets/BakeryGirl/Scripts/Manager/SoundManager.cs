@@ -114,10 +114,26 @@ public class SoundManager : MonoBehaviour {
     public void StopBGM(float fadeTime = 0) {
         StopChannel("bgm", fadeTime);
     }
+    public void PauseBGM(float fadeTime = 0) {
+        PauseChannel("bgm", fadeTime);
+    }
+    public void ResumeBGM(float fadeTime = 0) {
+        ResumeChannel("bgm", fadeTime);
+    }
     public void StopChannel(string channel, float fadeTime = 0) {
         var soundChannel = TryGetChannel(channel);
         if (soundChannel != null)
             soundChannel.Stop(fadeTime);
+    }
+    public void PauseChannel(string channel, float fadeTime = 0) {
+        var soundChannel = TryGetChannel(channel);
+        if (soundChannel != null)
+            soundChannel.Pause(fadeTime);
+    }
+    public void ResumeChannel(string channel, float fadeInTime = 0) {
+        var soundChannel = TryGetChannel(channel);
+        if (soundChannel != null)
+            soundChannel.Resume(fadeInTime);
     }
 
     void Start() {

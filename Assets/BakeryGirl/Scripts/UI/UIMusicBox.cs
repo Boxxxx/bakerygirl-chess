@@ -3,7 +3,7 @@ using UnityEngine.UI;
 
 public class UIMusicBox : MonoBehaviour {
     public const string kBgmChannel = "bgm";
-    public const float kBgmFadeOutTime = 0.5f;
+    public const float kBgmFadeTime = 0.5f;
 
     [System.Serializable]
     public class SongInfo {
@@ -16,19 +16,9 @@ public class UIMusicBox : MonoBehaviour {
     public SongInfo[] musicInfos = new SongInfo[] { };
 
     public bool autoPlay = true;
-
-    private bool m_paused = true;
+    
     private bool m_playing = false;
     private int m_currentIndex = 0;
-
-    public bool Paused {
-        get {
-            return m_paused;
-        }
-        set {
-            m_paused = value;
-        }
-    }
 
     public bool IsPlaying {
         get {
@@ -45,7 +35,7 @@ public class UIMusicBox : MonoBehaviour {
                     PlaySong(m_currentIndex);
                 }
                 else {
-                    SoundManager.Instance.StopBGM(kBgmFadeOutTime);
+                    SoundManager.Instance.StopBGM(kBgmFadeTime);
                 }
             }
         }
@@ -76,21 +66,23 @@ public class UIMusicBox : MonoBehaviour {
     }
 
     public void PauseSong() {
-        IsPlaying = false;
+        SoundManager.Instance.PauseBGM(kBgmFadeTime);
     }
 
     public void ResumeSong() {
-        IsPlaying = true;
+        SoundManager.Instance.ResumeBGM(kBgmFadeTime);
     }
 
     private void _PlaySong(SongInfo songInfo) {
-        m_playing = true;
         songName.text = songInfo.songName;
+        if (!m_playing) {
+            return;
+        }
         if (!string.IsNullOrEmpty(songInfo.bgmIntroFile)) {
-            SoundManager.Instance.PlayBGMWithIntro(songInfo.bgmIntroFile, songInfo.bgmLoopFile, 0, kBgmChannel, kBgmFadeOutTime);
+            SoundManager.Instance.PlayBGMWithIntro(songInfo.bgmIntroFile, songInfo.bgmLoopFile, 0, kBgmChannel, kBgmFadeTime);
         }
         else {
-            SoundManager.Instance.PlayBGM(songInfo.bgmLoopFile, 0, kBgmChannel, kBgmFadeOutTime);
+            SoundManager.Instance.PlayBGM(songInfo.bgmLoopFile, 0, kBgmChannel, kBgmFadeTime);
         }
     }
 

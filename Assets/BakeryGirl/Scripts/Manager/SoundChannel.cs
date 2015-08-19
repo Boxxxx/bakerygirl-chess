@@ -2,10 +2,8 @@
 using System.Collections;
 using System.Collections.Generic;
 
-public class SoundChannel : MonoBehaviour
-{
-    public enum SoundType
-    {
+public class SoundChannel : MonoBehaviour {
+    public enum SoundType {
         BGM, Sound, Voice
     }
 
@@ -13,47 +11,36 @@ public class SoundChannel : MonoBehaviour
     public delegate void OnVolumeTweenEnd();
 
     string _key = "";
-    public string Key
-    {
-        get
-        {
+    public string Key {
+        get {
             return _key;
         }
-        set
-        {
+        set {
             _key = value;
             gameObject.name = "SoundChannel_" + _key;
         }
     }
 
     List<AudioSource> m_audioSources = new List<AudioSource>();
-    float AudioSourcesVolume
-    {
-        set
-        {
+    float AudioSourcesVolume {
+        set {
             for (int i = 0; i < m_audioSources.Count; i++)
                 m_audioSources[i].volume = value;
         }
     }
 
     float m_channelVolume = 1;
-    public float ChannelVolume
-    {
-        get
-        {
+    public float ChannelVolume {
+        get {
             return m_channelVolume;
         }
-        set
-        {
+        set {
             m_channelVolume = value;
         }
     }
-    public float RealVolume
-    {
-        get
-        {
-            switch (m_soundType)
-            {
+    public float RealVolume {
+        get {
+            switch (m_soundType) {
                 case SoundType.BGM:
                     return ChannelVolume * SoundManager.Instance.BGMVolume;
                 case SoundType.Sound:
@@ -81,8 +68,7 @@ public class SoundChannel : MonoBehaviour
     iTween.EaseType m_tweenEaseType;
     OnVolumeTweenEnd m_tweenEndCb = null;
 
-    public void TweenVolume(float destVolume, float time, iTween.EaseType easeType, OnVolumeTweenEnd endCB = null)
-    {
+    public void TweenVolume(float destVolume, float time, iTween.EaseType easeType, OnVolumeTweenEnd endCB = null) {
         m_tweenVolume = true;
         m_tweenCurrentTime = 0;
 
@@ -94,10 +80,8 @@ public class SoundChannel : MonoBehaviour
         m_tweenEndCb = endCB;
     }
 
-    public bool IsPlaying
-    {
-        get
-        {
+    public bool IsPlaying {
+        get {
             for (int i = 0; i < m_audioSources.Count; i++)
                 if (m_audioSources[i].isPlaying)
                     return true;
@@ -105,10 +89,27 @@ public class SoundChannel : MonoBehaviour
         }
     }
 
-    void ExecuteStop()
-    {
+    public bool IsPaused {
+        get; private set;
+    }
+
+    void ExecuteStop() {
+        IsPaused = false;
         for (int i = 0; i < m_audioSources.Count; i++)
             m_audioSources[i].Stop();
+    }
+    void ExecutePause() {
+        IsPaused = true;
+        for (int i = 0; i < m_audioSources.Count; i++) {
+            m_audioSources[i].Pause();
+        }
+    }
+    void ExecuteResume() {
+        if (!IsPaused) {
+            return;
+        }
+        for (int i = 0; i < m_audioSources.Count; i++)
+            m_audioSources[i].Play();
     }
     public void Stop(float fadeOutTime = 0)
     {
@@ -120,6 +121,18 @@ public class SoundChannel : MonoBehaviour
         {
             TweenVolume(0, fadeOutTime, iTween.EaseType.linear, ExecuteStop);
         }
+    }
+    public void Pause(float fadeOutTime = 0) {
+        if (fadeOutTime == 0) {
+            ExecutePause();
+        }
+        else {
+            TweenVolume(0, fadeOutTime, iTween.EaseType.linear, ExecutePause);
+        }
+    }
+    public void Resume(float fadeInTime = 0) {
+        ExecuteResume();
+        TweenVolume(m_executeChannelVolume, fadeInTime, iTween.EaseType.linear);
     }
 
     float m_executeChannelVolume = 1;
@@ -148,6 +161,7 @@ public class SoundChannel : MonoBehaviour
         }
         m_audioSources[0].PlayScheduled(m_currentClipsScheduledDspTime[0]);
         m_currentClipIndex = 1;
+        IsPaused = false;
     }
     public void PlayClip(SoundType type, AudioClip clip, OnSoundPlayEnd playEndCB = null, bool loop = false, float channelvolume = 1, float currentFadeOutTime = 0, float delay = 0)
     {
@@ -233,7 +247,7 @@ public class SoundChannel : MonoBehaviour
             }
         }
 
-        if (onSoundPlayEnd != null && !IsPlaying)
+        if (onSoundPlayEnd != null && !IsPlaying && !IsPaused)
         {
             onSoundPlayEnd(this);
             onSoundPlayEnd = null;
