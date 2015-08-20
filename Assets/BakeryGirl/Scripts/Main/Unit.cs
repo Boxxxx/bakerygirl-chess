@@ -208,7 +208,7 @@ public class Unit : MonoBehaviour
     {
         if (type == TypeEnum.Bread)
         {
-            GameInfo.Instance.board.ModifyPlayerInfo(type, owner, 1);
+            GameInfo.Instance.board.ModifyPlayerInfo(type, owner, StorageInfo.ResourcePerBread);
             GameInfo.Instance.controller.StopEffect(Controller.EffectType.Killout);
             GameObject.Destroy(gameObject);
         }
