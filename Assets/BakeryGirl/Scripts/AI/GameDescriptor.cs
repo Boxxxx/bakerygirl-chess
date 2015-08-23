@@ -101,7 +101,7 @@ public class GameDescriptor : ICloneable
             case Ruler.ConflictResult.Eat_Bread:
                 Pick(tar);
                 UnitInfo info = Put(tar, Pick(src));
-                playerInfo[(int)info.owner][(int)Unit.TypeEnum.Bread]++;
+                playerInfo[(int)info.owner][(int)Unit.TypeEnum.Bread] += StorageInfo.ResourcePerBread;
                 break;
             case Ruler.ConflictResult.Nothing:
                 Put(tar, Pick(src));
@@ -119,6 +119,8 @@ public class GameDescriptor : ICloneable
         if (playerInfo[(int)owner][(int)Unit.TypeEnum.Bread] < StorageInfo.CardCost[UIStorage.TypeToIndex(type)])
             return false;
         if (GetInfo(BoardInfo.Base[(int)owner]).owner != Unit.OwnerEnum.None)
+            return false;
+        if (type == Unit.TypeEnum.Bomb && GameInfo.Instance.board.GetPlayerInfo(Unit.TypeEnum.Bomb, turn) >= 2)
             return false;
         if (type == Unit.TypeEnum.Boss && GetPlayerInfo(Unit.TypeEnum.Boss, turn) != 0)
             return false;
