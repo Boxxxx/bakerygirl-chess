@@ -43,7 +43,7 @@ public class UIPlayer : MonoBehaviour {
             flag.color = value ? StorageInfo.Orange : Color.black;
             playerName.color = value ? StorageInfo.Orange : Color.black;
             foreach (var card in cards) {
-                card.Interactable = value;
+                card.Interactable = false;
             }
         }
     }

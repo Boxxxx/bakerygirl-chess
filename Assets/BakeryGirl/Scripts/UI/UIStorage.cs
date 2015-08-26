@@ -156,7 +156,7 @@ public class UIStorage : MonoBehaviour {
     /// <param name="type">the card's type</param>
     /// <returns></returns>
     private bool CanBuy(Unit.TypeEnum type) {
-        if (m_hasbuy)
+        if (m_hasbuy || GameInfo.Instance.controller.IsEffecting)
             return false;
         if (NowPlayer.Resource < StorageInfo.CardCost[TypeToIndex(type)])
             return false;
