@@ -500,13 +500,13 @@ public class Controller : MonoBehaviour
     {
         if (active)
         {
-            if (!audio.isPlaying)
-                audio.Play();
+            if (!GetComponent<AudioSource>().isPlaying)
+                GetComponent<AudioSource>().Play();
         }
         else
         {
-            if (audio.isPlaying)
-                audio.Stop();
+            if (GetComponent<AudioSource>().isPlaying)
+                GetComponent<AudioSource>().Stop();
         }
     }
     #endregion
@@ -654,7 +654,7 @@ public class Controller : MonoBehaviour
         else
         {
             var point = GameInfo.Instance.mainCamera.ScreenToWorldPoint(Input.mousePosition);
-            if (board.gameObject.collider2D == Physics2D.OverlapPoint(point)) {
+            if (board.gameObject.GetComponent<Collider2D>() == Physics2D.OverlapPoint(point)) {
                 MouseEvent(point);
             }
         }
